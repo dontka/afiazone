@@ -30,18 +30,18 @@ abstract class BaseController
     protected array $data = [];
 
     /**
-     * User data (from authentication middleware)
+     * Authenticated user model
      */
-    protected ?array $user = null;
+    protected ?\App\Models\User $authUser = null;
 
-    /**
-     * Constructor
-     */
     public function __construct()
     {
         $this->method = $_SERVER['REQUEST_METHOD'];
         $this->path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
         $this->parseRequestData();
+
+        // Populate from middleware
+        $this->authUser = $GLOBALS['auth_user'] ?? null;
     }
 
     /**
@@ -61,20 +61,12 @@ abstract class BaseController
         }
     }
 
-    /**
-     * Set authenticated user
-     */
-    public function setUser(array $user): void
+    protected function authUserId(): int
     {
-        $this->user = $user;
-    }
-
-    /**
-     * Get authenticated user
-     */
-    public function getUser(): ?array
-    {
-        return $this->user;
+        if (!$this->authUser) {
+            throw new HttpException('Unauthorized', 401);
+        }
+        return (int) $this->authUser->id;
     }
 
     /**
@@ -200,16 +192,20 @@ abstract class BaseController
         exit;
     }
 
-    /**
-     * Check authorization
-     */
-    protected function authorize(string $permission): bool
+    protected function authorize(string $permission): void
     {
-        if (!$this->user) {
+        if (!$this->authUser) {
             throw new HttpException('Unauthorized', 401);
         }
+        if (!$this->authUser->hasPermission($permission)) {
+            throw new \App\Exceptions\ForbiddenException("Missing permission: {$permission}");
+        }
+    }
 
-        // TODO: Check permission in user roles/permissions
-        return true;
+    protected function requireAuth(): void
+    {
+        if (!$this->authUser) {
+            throw new HttpException('Unauthorized', 401);
+        }
     }
 }

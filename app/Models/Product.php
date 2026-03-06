@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-/**
- * Product Model
- */
 class Product extends BaseModel
 {
     protected string $table = 'products';
@@ -16,38 +13,75 @@ class Product extends BaseModel
         'merchant_id',
         'sku',
         'name',
+        'slug',
         'description',
         'category_id',
         'price',
+        'cost_price',
+        'tax_rate',
         'prescription_required',
-        'created_at',
-        'updated_at',
+        'is_active',
+        'is_featured',
+        'status',
     ];
 
-    /**
-     * Get product images
-     */
+    public function getCategory(): ?BaseModel
+    {
+        return $this->belongsTo(ProductCategory::class, 'category_id');
+    }
+
+    public function getMerchant(): ?BaseModel
+    {
+        return $this->belongsTo(Merchant::class, 'merchant_id');
+    }
+
     public function getImages(): array
     {
-        // TODO: Fetch images from database
-        return [];
+        return $this->hasMany(ProductImage::class, 'product_id');
     }
 
-    /**
-     * Get product variants
-     */
     public function getVariants(): array
     {
-        // TODO: Fetch variants from database
-        return [];
+        return $this->hasMany(ProductVariant::class, 'product_id');
     }
 
-    /**
-     * Get product reviews
-     */
+    public function getAttributes(): array
+    {
+        return $this->hasMany(ProductAttribute::class, 'product_id');
+    }
+
     public function getReviews(): array
     {
-        // TODO: Fetch reviews from database
-        return [];
+        return $this->hasMany(ProductReview::class, 'product_id');
+    }
+
+    public static function findBySku(string $sku): ?self
+    {
+        return self::findBy('sku', $sku);
+    }
+
+    public static function findBySlug(string $slug): ?self
+    {
+        return self::findBy('slug', $slug);
+    }
+
+    public static function search(string $term, int $limit = 20): array
+    {
+        return self::query()
+            ->fullTextSearch('name, description', $term)
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->limit($limit)
+            ->get();
+    }
+
+    public static function findByCategory(int $categoryId): array
+    {
+        return self::query()
+            ->where('category_id', $categoryId)
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->orderBy('created_at', 'DESC')
+            ->get();
     }
 }

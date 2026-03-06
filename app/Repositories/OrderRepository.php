@@ -6,9 +6,6 @@ namespace App\Repositories;
 
 use App\Models\Order;
 
-/**
- * Order Repository
- */
 class OrderRepository extends BaseRepository
 {
     public function __construct()
@@ -16,30 +13,39 @@ class OrderRepository extends BaseRepository
         parent::__construct(new Order());
     }
 
-    /**
-     * Find by order number
-     */
     public function findByOrderNumber(string $orderNumber): ?Order
     {
-        // TODO: Implement custom query
-        return null;
+        /** @var ?Order */
+        return $this->findBy('order_number', $orderNumber);
     }
 
-    /**
-     * Find user orders
-     */
-    public function findByUser(int $userId): array
+    public function findByUser(int $userId, int $page = 1, int $perPage = 20): array
     {
-        // TODO: Implement custom query
-        return [];
+        return $this->query()
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'DESC')
+            ->paginate($page, $perPage);
     }
 
-    /**
-     * Find orders by status
-     */
-    public function findByStatus(string $status): array
+    public function findByStatus(string $status, int $page = 1, int $perPage = 20): array
     {
-        // TODO: Implement custom query
-        return [];
+        return $this->query()
+            ->where('order_status', $status)
+            ->orderBy('created_at', 'DESC')
+            ->paginate($page, $perPage);
+    }
+
+    public function findByUserAndStatus(int $userId, string $status): array
+    {
+        return $this->query()
+            ->where('user_id', $userId)
+            ->where('order_status', $status)
+            ->orderBy('created_at', 'DESC')
+            ->get();
+    }
+
+    public function countByUser(int $userId): int
+    {
+        return $this->query()->where('user_id', $userId)->count();
     }
 }

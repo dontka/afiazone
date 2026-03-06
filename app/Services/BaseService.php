@@ -4,79 +4,80 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Monolog\Logger;
+
 /**
- * Base Service Class
- * 
- * All services should extend this class to inherit
- * common business logic methods.
+ * Base Service — all services inherit logging and validation utilities.
  */
 abstract class BaseService
 {
-    /**
-     * Logger instance
-     */
-    protected ?\Logger $logger = null;
+    protected Logger $logger;
 
-    /**
-     * Constructor
-     */
     public function __construct()
     {
         $this->logger = logger();
     }
 
-    /**
-     * Log information
-     */
     protected function log(string $message, array $context = []): void
     {
-        if ($this->logger) {
-            $this->logger->info($message, $context);
-        }
+        $this->logger->info($message, $context);
     }
 
-    /**
-     * Log error
-     */
-    protected function logError(string $message, \Exception $exception): void
+    protected function logError(string $message, \Throwable $exception): void
     {
-        if ($this->logger) {
-            $this->logger->error($message, ['exception' => $exception->getMessage()]);
-        }
+        $this->logger->error($message, [
+            'exception' => $exception->getMessage(),
+            'trace' => $exception->getTraceAsString(),
+        ]);
     }
 
-    /**
-     * Validate input data
-     */
     protected function validate(array $data, array $rules): array
     {
         $errors = [];
-
         foreach ($rules as $field => $fieldRules) {
-            $rules_array = explode('|', $fieldRules);
-            foreach ($rules_array as $rule) {
-                $this->validateField($field, $data[$field] ?? null, $rule, $errors);
+            $rulesList = explode('|', $fieldRules);
+            $value = $data[$field] ?? null;
+            foreach ($rulesList as $rule) {
+                $error = $this->applyRule($field, $value, $rule, $data);
+                if ($error) {
+                    $errors[$field] = $error;
+                    break;
+                }
             }
         }
-
         return $errors;
     }
 
-    /**
-     * Validate single field
-     */
-    protected function validateField(
-        string $field,
-        mixed $value,
-        string $rule,
-        array &$errors
-    ): void {
-        if ($rule === 'required' && empty($value)) {
-            $errors[$field] = "{$field} is required";
-        } elseif ($rule === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
-            $errors[$field] = "{$field} must be a valid email";
-        } elseif ($rule === 'numeric' && !is_numeric($value)) {
-            $errors[$field] = "{$field} must be numeric";
+    private function applyRule(string $field, mixed $value, string $rule, array $data): ?string
+    {
+        // Parse rule:param format
+        $params = [];
+        if (str_contains($rule, ':')) {
+            [$rule, $paramStr] = explode(':', $rule, 2);
+            $params = explode(',', $paramStr);
+        }
+
+        return match ($rule) {
+            'required' => empty($value) && $value !== '0' && $value !== 0
+                ? "{$field} is required" : null,
+            'email' => $value && !filter_var($value, FILTER_VALIDATE_EMAIL)
+                ? "{$field} must be a valid email" : null,
+            'numeric' => $value && !is_numeric($value)
+                ? "{$field} must be numeric" : null,
+            'min' => $value && strlen((string) $value) < (int) ($params[0] ?? 0)
+                ? "{$field} must be at least {$params[0]} characters" : null,
+            'max' => $value && strlen((string) $value) > (int) ($params[0] ?? 255)
+                ? "{$field} must not exceed {$params[0]} characters" : null,
+            'in' => $value && !in_array((string) $value, $params, true)
+                ? "{$field} must be one of: " . implode(', ', $params) : null,
+            default => null,
+        };
+    }
+
+    protected function throwIfErrors(array $errors): void
+    {
+        if (!empty($errors)) {
+            throw new \App\Exceptions\ValidationException('Validation failed', $errors);
         }
     }
 }

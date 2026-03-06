@@ -4,93 +4,68 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-/**
- * Product Controller
- */
+use App\Services\ProductService;
+
 class ProductController extends BaseController
 {
-    /**
-     * List products
-     */
+    private ProductService $productService;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->productService = new ProductService();
+    }
+
     public function index(): void
     {
-        // TODO: Fetch products with filters
-        // TODO: Pagination
+        $page = (int) ($this->getData('page') ?? 1);
+        $perPage = (int) ($this->getData('per_page') ?? 20);
+        $filters = [
+            'search' => $this->getData('search'),
+            'category_id' => $this->getData('category_id'),
+        ];
 
-        $this->jsonResponse([
-            'products' => [],
-            'total' => 0,
-            'page' => 1,
-            'per_page' => 20,
-        ]);
+        $result = $this->productService->getAll($filters, $page, $perPage);
+        $this->jsonResponse($result);
     }
 
-    /**
-     * Get product by ID
-     */
     public function show(int $id): void
     {
-        // TODO: Fetch product details
-        // TODO: Fetch reviews
-        // TODO: Fetch variants
+        $product = $this->productService->getById($id);
 
-        $this->jsonResponse([
-            'product' => [],
-        ]);
+        if (!$product) {
+            $this->errorResponse('Product not found', 404);
+            return;
+        }
+
+        $this->jsonResponse(['product' => $product->toArray()]);
     }
 
-    /**
-     * Create product (merchant only)
-     */
     public function store(): void
     {
-        if ($this->method !== 'POST') {
-            $this->errorResponse('Method not allowed', 405);
-            return;
-        }
-
-        $this->authorize('create_product');
-
-        $data = $this->getData();
-
-        // TODO: Validate product data
-        // TODO: Create product
-        // TODO: Handle images
-
-        $this->jsonResponse(['product' => []], 201);
+        $this->authorize('products.create');
+        $product = $this->productService->create($this->getData(), $this->authUserId());
+        $this->jsonResponse(['product' => $product->toArray()], 201);
     }
 
-    /**
-     * Update product
-     */
     public function update(int $id): void
     {
-        if (!in_array($this->method, ['PUT', 'PATCH'])) {
-            $this->errorResponse('Method not allowed', 405);
-            return;
-        }
-
-        $this->authorize('update_product');
-
-        // TODO: Validate and update product
-
-        $this->jsonResponse(['product' => []]);
+        $this->authorize('products.update');
+        $this->productService->update($id, $this->getData());
+        $product = $this->productService->getById($id);
+        $this->jsonResponse(['product' => $product?->toArray() ?? []]);
     }
 
-    /**
-     * Delete product
-     */
     public function destroy(int $id): void
     {
-        if ($this->method !== 'DELETE') {
-            $this->errorResponse('Method not allowed', 405);
-            return;
-        }
-
-        $this->authorize('delete_product');
-
-        // TODO: Delete product
-
+        $this->authorize('products.delete');
+        $this->productService->delete($id);
         $this->jsonResponse(['message' => 'Product deleted']);
+    }
+
+    public function featured(): void
+    {
+        $products = $this->productService->getFeatured();
+        $this->jsonResponse(['products' => array_map(fn($p) => $p->toArray(), $products)]);
     }
 }

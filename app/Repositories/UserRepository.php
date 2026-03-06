@@ -6,9 +6,6 @@ namespace App\Repositories;
 
 use App\Models\User;
 
-/**
- * User Repository
- */
 class UserRepository extends BaseRepository
 {
     public function __construct()
@@ -16,30 +13,38 @@ class UserRepository extends BaseRepository
         parent::__construct(new User());
     }
 
-    /**
-     * Find by email
-     */
     public function findByEmail(string $email): ?User
     {
-        // TODO: Implement custom query to find by email
-        return null;
+        /** @var ?User */
+        return $this->findBy('email', $email);
     }
 
-    /**
-     * Find by phone
-     */
     public function findByPhone(string $phone): ?User
     {
-        // TODO: Implement custom query to find by phone
-        return null;
+        /** @var ?User */
+        return $this->findBy('phone', $phone);
     }
 
-    /**
-     * Find active users
-     */
     public function findActive(): array
     {
-        // TODO: Implement custom query
-        return [];
+        return $this->query()->where('status', 'active')->get();
+    }
+
+    public function searchByName(string $name, int $limit = 20): array
+    {
+        return $this->query()
+            ->where('first_name', 'LIKE', "%{$name}%")
+            ->limit($limit)
+            ->get();
+    }
+
+    public function emailExists(string $email): bool
+    {
+        return $this->exists('email', $email);
+    }
+
+    public function phoneExists(string $phone): bool
+    {
+        return $this->exists('phone', $phone);
     }
 }

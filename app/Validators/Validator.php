@@ -4,49 +4,40 @@ declare(strict_types=1);
 
 namespace App\Validators;
 
-/**
- * Base Validator Class
- */
+use App\Exceptions\ValidationException;
+
 abstract class Validator
 {
-    /**
-     * Data to validate
-     */
     protected array $data = [];
-
-    /**
-     * Validation rules
-     */
     protected array $rules = [];
-
-    /**
-     * Error messages
-     */
     protected array $errors = [];
 
-    /**
-     * Constructor
-     */
-    public function __construct(array $data, array $rules)
+    public function __construct(array $data, array $rules = [])
     {
         $this->data = $data;
-        $this->rules = $rules;
+        $this->rules = $rules ?: $this->rules;
     }
 
-    /**
-     * Validate data
-     */
     public function validate(): bool
     {
         $this->errors = [];
 
         foreach ($this->rules as $field => $rules) {
-            $rules_array = explode('|', $rules);
+            $rulesList = explode('|', $rules);
             $value = $this->data[$field] ?? null;
 
-            foreach ($rules_array as $rule) {
-                if (!$this->validateRule($field, $value, $rule)) {
-                    break;
+            foreach ($rulesList as $rule) {
+                $params = [];
+                if (str_contains($rule, ':')) {
+                    [$rule, $paramStr] = explode(':', $rule, 2);
+                    $params = explode(',', $paramStr);
+                }
+
+                $method = 'validate' . ucfirst($rule);
+                if (method_exists($this, $method)) {
+                    if (!$this->$method($field, $value, ...$params)) {
+                        break; // stop at first error per field
+                    }
                 }
             }
         }
@@ -55,88 +46,109 @@ abstract class Validator
     }
 
     /**
-     * Validate single rule
+     * Validate and throw on failure.
      */
-    protected function validateRule(string $field, mixed $value, string $rule): bool
+    public function validateOrFail(): void
     {
-        $method = 'validate' . ucfirst($rule);
-
-        if (!method_exists($this, $method)) {
-            return true;
+        if (!$this->validate()) {
+            throw new ValidationException('Validation failed', $this->errors);
         }
-
-        if (!$this->$method($field, $value)) {
-            return false;
-        }
-
-        return true;
     }
 
-    /**
-     * Required rule
-     */
+    public function getErrors(): array
+    {
+        return $this->errors;
+    }
+
+    // ── Built-in rules ──────────────────────────
+
     protected function validateRequired(string $field, mixed $value): bool
     {
-        if (empty($value)) {
+        if (empty($value) && $value !== '0' && $value !== 0) {
             $this->errors[$field] = "{$field} is required";
             return false;
         }
         return true;
     }
 
-    /**
-     * Email rule
-     */
     protected function validateEmail(string $field, mixed $value): bool
     {
-        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+        if ($value && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
             $this->errors[$field] = "{$field} must be a valid email";
             return false;
         }
         return true;
     }
 
-    /**
-     * Numeric rule
-     */
     protected function validateNumeric(string $field, mixed $value): bool
     {
-        if (!is_numeric($value)) {
+        if ($value !== null && !is_numeric($value)) {
             $this->errors[$field] = "{$field} must be numeric";
             return false;
         }
         return true;
     }
 
-    /**
-     * Min length rule
-     */
-    protected function validateMinLength(string $field, mixed $value, int $length): bool
+    protected function validateMin(string $field, mixed $value, string $length = '0'): bool
     {
-        if (strlen((string)$value) < $length) {
+        if ($value && strlen((string) $value) < (int) $length) {
             $this->errors[$field] = "{$field} must be at least {$length} characters";
             return false;
         }
         return true;
     }
 
-    /**
-     * Max length rule
-     */
-    protected function validateMaxLength(string $field, mixed $value, int $length): bool
+    protected function validateMax(string $field, mixed $value, string $length = '255'): bool
     {
-        if (strlen((string)$value) > $length) {
+        if ($value && strlen((string) $value) > (int) $length) {
             $this->errors[$field] = "{$field} must not exceed {$length} characters";
             return false;
         }
         return true;
     }
 
-    /**
-     * Get errors
-     */
-    public function getErrors(): array
+    protected function validateIn(string $field, mixed $value, string ...$options): bool
     {
-        return $this->errors;
+        if ($value && !in_array((string) $value, $options, true)) {
+            $this->errors[$field] = "{$field} must be one of: " . implode(', ', $options);
+            return false;
+        }
+        return true;
+    }
+
+    protected function validatePhone(string $field, mixed $value): bool
+    {
+        if ($value && !preg_match('/^\+?[0-9]{8,15}$/', (string) $value)) {
+            $this->errors[$field] = "{$field} must be a valid phone number";
+            return false;
+        }
+        return true;
+    }
+
+    protected function validateUrl(string $field, mixed $value): bool
+    {
+        if ($value && !filter_var($value, FILTER_VALIDATE_URL)) {
+            $this->errors[$field] = "{$field} must be a valid URL";
+            return false;
+        }
+        return true;
+    }
+
+    protected function validateBoolean(string $field, mixed $value): bool
+    {
+        if ($value !== null && !in_array($value, [true, false, 0, 1, '0', '1'], true)) {
+            $this->errors[$field] = "{$field} must be boolean";
+            return false;
+        }
+        return true;
+    }
+
+    protected function validatePositive(string $field, mixed $value): bool
+    {
+        if ($value !== null && (!is_numeric($value) || (float) $value <= 0)) {
+            $this->errors[$field] = "{$field} must be positive";
+            return false;
+        }
+        return true;
     }
 }

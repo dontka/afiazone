@@ -4,92 +4,64 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-/**
- * Order Controller
- */
+use App\Services\OrderService;
+
 class OrderController extends BaseController
 {
-    /**
-     * List user orders
-     */
+    private OrderService $orderService;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->orderService = new OrderService();
+    }
+
     public function index(): void
     {
-        $this->authorize('view_orders');
+        $this->requireAuth();
+        $page = (int) ($this->getData('page') ?? 1);
+        $perPage = (int) ($this->getData('per_page') ?? 20);
 
-        // TODO: Fetch user orders with status
-        // TODO: Pagination
-
-        $this->jsonResponse([
-            'orders' => [],
-            'total' => 0,
-        ]);
+        $result = $this->orderService->getUserOrders($this->authUserId(), $page, $perPage);
+        $this->jsonResponse($result);
     }
 
-    /**
-     * Get order details
-     */
     public function show(int $id): void
     {
-        // TODO: Fetch order with items, shipping, status history
+        $this->requireAuth();
+        $order = $this->orderService->getById($id);
 
-        $this->jsonResponse(['order' => []]);
+        if (!$order) {
+            $this->errorResponse('Order not found', 404);
+            return;
+        }
+
+        $this->jsonResponse(['order' => $order->toArray()]);
     }
 
-    /**
-     * Create order from cart
-     */
     public function store(): void
     {
-        if ($this->method !== 'POST') {
-            $this->errorResponse('Method not allowed', 405);
-            return;
-        }
-
-        $this->authorize('create_order');
-
-        // TODO: Validate cart
-        // TODO: Create order
-        // TODO: Reserve funds/process payment
-        // TODO: Create shipment
-
-        $this->jsonResponse(['order' => []], 201);
+        $this->requireAuth();
+        $order = $this->orderService->createFromCart($this->authUserId(), $this->getData());
+        $this->jsonResponse(['order' => $order->toArray()], 201);
     }
 
-    /**
-     * Update order status
-     */
     public function updateStatus(int $id): void
     {
-        if (!in_array($this->method, ['PUT', 'PATCH'])) {
-            $this->errorResponse('Method not allowed', 405);
-            return;
-        }
-
-        $this->authorize('update_order');
-
-        $status = $this->getData('status');
-
-        // TODO: Update order status
-        // TODO: Log status change
-        // TODO: Notify user
-
-        $this->jsonResponse(['order' => []]);
+        $this->authorize('orders.update_status');
+        $this->orderService->updateStatus(
+            $id,
+            (string) $this->getData('status'),
+            $this->authUserId(),
+            (string) ($this->getData('notes') ?? '')
+        );
+        $this->jsonResponse(['message' => 'Status updated']);
     }
 
-    /**
-     * Cancel order
-     */
     public function cancel(int $id): void
     {
-        if ($this->method !== 'POST') {
-            $this->errorResponse('Method not allowed', 405);
-            return;
-        }
-
-        // TODO: Check if order can be cancelled
-        // TODO: Refund payment
-        // TODO: Update status
-
+        $this->requireAuth();
+        $this->orderService->cancel($id, $this->authUserId(), (string) ($this->getData('reason') ?? ''));
         $this->jsonResponse(['message' => 'Order cancelled']);
     }
 }

@@ -4,93 +4,69 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-/**
- * Wallet Controller
- */
+use App\Services\WalletService;
+
 class WalletController extends BaseController
 {
-    /**
-     * Get wallet balance
-     */
+    private WalletService $walletService;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->walletService = new WalletService();
+    }
+
     public function show(): void
     {
-        $this->authorize('view_wallet');
-
-        // TODO: Fetch wallet balance and details
-
-        $this->jsonResponse([
-            'wallet' => [
-                'id' => 1,
-                'balance' => 0,
-                'reserved' => 0,
-                'available' => 0,
-            ],
-        ]);
+        $this->requireAuth();
+        $wallet = $this->walletService->getWallet($this->authUserId());
+        $this->jsonResponse(['wallet' => $wallet->toArray()]);
     }
 
-    /**
-     * Top up wallet
-     */
     public function topup(): void
     {
-        if ($this->method !== 'POST') {
-            $this->errorResponse('Method not allowed', 405);
-            return;
-        }
+        $this->requireAuth();
+        $amount = (float) $this->getData('amount');
+        $method = (string) ($this->getData('payment_method') ?? 'card');
 
-        $this->authorize('topup_wallet');
+        $tx = $this->walletService->credit(
+            $this->authUserId(),
+            $amount,
+            'Wallet top-up',
+            $method
+        );
 
-        $amount = $this->getData('amount');
-        $paymentMethod = $this->getData('payment_method');
-
-        // TODO: Validate amount
-        // TODO: Initialize payment
-        // TODO: Create transaction record
-
-        $this->jsonResponse([
-            'transaction' => [
-                'id' => 1,
-                'amount' => $amount,
-                'status' => 'pending',
-            ],
-        ], 201);
+        $this->jsonResponse(['transaction' => $tx->toArray()], 201);
     }
 
-    /**
-     * Get transaction history
-     */
     public function transactions(): void
     {
-        $this->authorize('view_wallet');
-
-        // TODO: Fetch wallet transactions
-        // TODO: Pagination
-
-        $this->jsonResponse([
-            'transactions' => [],
-            'total' => 0,
-        ]);
+        $this->requireAuth();
+        $page = (int) ($this->getData('page') ?? 1);
+        $result = $this->walletService->getTransactions($this->authUserId(), $page);
+        $this->jsonResponse($result);
     }
 
-    /**
-     * Transfer funds
-     */
     public function transfer(): void
     {
-        if ($this->method !== 'POST') {
-            $this->errorResponse('Method not allowed', 405);
-            return;
-        }
+        $this->requireAuth();
+        $amount = (float) $this->getData('amount');
+        $recipientId = (int) $this->getData('recipient_id');
 
-        $this->authorize('transfer_funds');
+        // Debit sender
+        $this->walletService->debit(
+            $this->authUserId(),
+            $amount,
+            "Transfer to user #{$recipientId}"
+        );
 
-        $amount = $this->getData('amount');
-        $recipient = $this->getData('recipient');
+        // Credit recipient
+        $this->walletService->credit(
+            $recipientId,
+            $amount,
+            "Transfer from user #{$this->authUserId()}"
+        );
 
-        // TODO: Validate recipient
-        // TODO: Create transfer transaction
-        // TODO: Update both wallets
-
-        $this->jsonResponse(['transaction' => []], 201);
+        $this->jsonResponse(['message' => 'Transfer successful'], 201);
     }
 }

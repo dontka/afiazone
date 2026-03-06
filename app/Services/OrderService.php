@@ -5,85 +5,140 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\ShoppingCart;
+use App\Models\BaseModel;
+use App\Repositories\OrderRepository;
 
-/**
- * Order Service
- */
 class OrderService extends BaseService
 {
-    /**
-     * Get user orders
-     */
+    private OrderRepository $orderRepo;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->orderRepo = new OrderRepository();
+    }
+
     public function getUserOrders(int $userId, int $page = 1, int $perPage = 20): array
     {
-        // TODO: Fetch user orders from database
-
-        return [
-            'orders' => [],
-            'total' => 0,
-            'page' => $page,
-            'per_page' => $perPage,
-        ];
+        return $this->orderRepo->findByUser($userId, $page, $perPage);
     }
 
-    /**
-     * Get order by ID
-     */
     public function getById(int $id): ?Order
     {
-        return Order::find($id);
+        /** @var ?Order */
+        return $this->orderRepo->find($id);
     }
 
-    /**
-     * Create order from cart
-     */
-    public function createFromCart(int $userId, array $cartData): ?Order
+    public function getByOrderNumber(string $orderNumber): ?Order
     {
-        // TODO: Validate cart
-        // TODO: Create order
-        // TODO: Create order items
-        // TODO: Reserve funds
-        // TODO: Create shipment
-
-        return null;
+        return $this->orderRepo->findByOrderNumber($orderNumber);
     }
 
-    /**
-     * Update order status
-     */
-    public function updateStatus(int $id, string $status, string $reason = ''): bool
+    public function createFromCart(int $userId, array $data): Order
     {
-        $order = Order::find($id);
+        $errors = $this->validate($data, [
+            'payment_method' => 'required|in:cash_on_delivery,wallet,card,mobile_money',
+        ]);
+        $this->throwIfErrors($errors);
 
+        $cart = ShoppingCart::findByUserId($userId);
+        if (!$cart) {
+            throw new \App\Exceptions\NotFoundException('Cart not found');
+        }
+
+        $items = $cart->getItems();
+        if (empty($items)) {
+            $this->throwIfErrors(['cart' => 'Cart is empty']);
+        }
+
+        return BaseModel::transaction(function () use ($userId, $cart, $items, $data) {
+            $totalAmount = 0.0;
+            $taxAmount = 0.0;
+
+            $order = Order::create([
+                'order_number' => Order::generateOrderNumber(),
+                'user_id' => $userId,
+                'total_amount' => 0,
+                'tax_amount' => 0,
+                'shipping_fee' => $data['shipping_fee'] ?? 0,
+                'discount_amount' => $data['discount_amount'] ?? 0,
+                'final_amount' => 0,
+                'payment_method' => $data['payment_method'],
+                'payment_status' => 'pending',
+                'order_status' => 'pending',
+            ]);
+
+            foreach ($items as $cartItem) {
+                $subtotal = (float) $cartItem->price_at_add * (int) $cartItem->quantity;
+                $itemTax = $subtotal * 0; // Tax calculated per product in future phases
+                $totalAmount += $subtotal;
+                $taxAmount += $itemTax;
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $cartItem->product_id,
+                    'quantity' => $cartItem->quantity,
+                    'unit_price' => $cartItem->price_at_add,
+                    'tax_amount' => $itemTax,
+                    'subtotal' => $subtotal,
+                ]);
+            }
+
+            $finalAmount = $totalAmount + $taxAmount + (float) ($data['shipping_fee'] ?? 0)
+                         - (float) ($data['discount_amount'] ?? 0);
+
+            $order->update([
+                'total_amount' => $totalAmount,
+                'tax_amount' => $taxAmount,
+                'final_amount' => $finalAmount,
+            ]);
+
+            $order->logStatusChange('pending', null, 'Order created');
+
+            // Clear cart after order creation
+            foreach ($items as $item) {
+                $item->delete();
+            }
+            $cart->update(['total_price' => 0]);
+
+            $this->log('Order created', ['order_id' => $order->id, 'user_id' => $userId]);
+
+            return $order;
+        });
+    }
+
+    public function updateStatus(int $id, string $status, ?int $changedBy = null, string $notes = ''): bool
+    {
+        $order = $this->getById($id);
         if (!$order) {
-            return false;
+            throw new \App\Exceptions\NotFoundException('Order not found');
         }
 
-        if ($order->update(['status' => $status])) {
-            // TODO: Log status change
-            // TODO: Send notification
-            $this->log('Order status updated', ['order_id' => $id, 'status' => $status]);
-            return true;
+        $validTransitions = [
+            'pending' => ['confirmed', 'cancelled'],
+            'confirmed' => ['processing', 'cancelled'],
+            'processing' => ['shipped', 'cancelled'],
+            'shipped' => ['delivered', 'returned'],
+            'delivered' => ['returned'],
+        ];
+
+        $currentStatus = $order->order_status;
+        $allowed = $validTransitions[$currentStatus] ?? [];
+        if (!in_array($status, $allowed, true)) {
+            $this->throwIfErrors(['status' => "Cannot transition from {$currentStatus} to {$status}"]);
         }
 
-        return false;
+        $order->logStatusChange($status, $changedBy, $notes);
+        $result = $order->update(['order_status' => $status]);
+
+        $this->log('Order status updated', ['order_id' => $id, 'status' => $status]);
+        return $result;
     }
 
-    /**
-     * Cancel order
-     */
-    public function cancel(int $id, string $reason = ''): bool
+    public function cancel(int $id, ?int $userId = null, string $reason = ''): bool
     {
-        $order = Order::find($id);
-
-        if (!$order) {
-            return false;
-        }
-
-        // TODO: Check if order can be cancelled
-        // TODO: Refund payment
-        // TODO: Update status to cancelled
-
-        return true;
+        return $this->updateStatus($id, 'cancelled', $userId, $reason);
     }
 }

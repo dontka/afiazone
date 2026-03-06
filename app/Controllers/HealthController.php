@@ -51,7 +51,7 @@ class HealthController extends BaseController
             $db = db();
             $result = $db->query('SELECT 1')->fetch();
             return $result !== false;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }
@@ -64,7 +64,7 @@ class HealthController extends BaseController
         try {
             $cacheDir = storage_path('cache');
             return is_dir($cacheDir) && is_writable($cacheDir);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }

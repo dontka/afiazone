@@ -6,9 +6,6 @@ namespace App\Repositories;
 
 use App\Models\Product;
 
-/**
- * Product Repository
- */
 class ProductRepository extends BaseRepository
 {
     public function __construct()
@@ -16,39 +13,71 @@ class ProductRepository extends BaseRepository
         parent::__construct(new Product());
     }
 
-    /**
-     * Find by SKU
-     */
     public function findBySku(string $sku): ?Product
     {
-        // TODO: Implement custom query
-        return null;
+        /** @var ?Product */
+        return $this->findBy('sku', $sku);
     }
 
-    /**
-     * Find by category
-     */
-    public function findByCategory(int $categoryId): array
+    public function findBySlug(string $slug): ?Product
     {
-        // TODO: Implement custom query
-        return [];
+        /** @var ?Product */
+        return $this->findBy('slug', $slug);
     }
 
-    /**
-     * Find prescription-only products
-     */
+    public function findByCategory(int $categoryId, int $page = 1, int $perPage = 20): array
+    {
+        return $this->query()
+            ->where('category_id', $categoryId)
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->orderBy('created_at', 'DESC')
+            ->paginate($page, $perPage);
+    }
+
+    public function findByMerchant(int $merchantId, int $page = 1, int $perPage = 20): array
+    {
+        return $this->query()
+            ->where('merchant_id', $merchantId)
+            ->orderBy('created_at', 'DESC')
+            ->paginate($page, $perPage);
+    }
+
     public function findPrescriptionRequired(): array
     {
-        // TODO: Implement custom query
-        return [];
+        return $this->query()
+            ->where('prescription_required', true)
+            ->where('is_active', true)
+            ->get();
     }
 
-    /**
-     * Search products
-     */
-    public function search(string $query, int $limit = 20): array
+    public function search(string $term, int $page = 1, int $perPage = 20): array
     {
-        // TODO: Implement full-text search
-        return [];
+        return $this->query()
+            ->fullTextSearch('name, description', $term)
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->orderBy('rating', 'DESC')
+            ->paginate($page, $perPage);
+    }
+
+    public function getPublished(int $page = 1, int $perPage = 20): array
+    {
+        return $this->query()
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->orderBy('created_at', 'DESC')
+            ->paginate($page, $perPage);
+    }
+
+    public function getFeatured(int $limit = 10): array
+    {
+        return $this->query()
+            ->where('is_featured', true)
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->orderBy('rating', 'DESC')
+            ->limit($limit)
+            ->get();
     }
 }

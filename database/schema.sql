@@ -1,79 +1,17 @@
 -- ===================================================================
--- AfiaZone Database Schema (MySQL 8.0+ Compatible)
--- Clean, Properly Ordered Schema
+-- AfiaZone Database Schema
+-- Medical Marketplace with E-Wallet
 -- ===================================================================
 
 -- Enable strict mode
-SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+SET sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- ===================================================================
--- 1. BASE TABLES (No dependencies)
+-- USERS & AUTHENTICATION
 -- ===================================================================
 
-CREATE TABLE roles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(50) UNIQUE NOT NULL,
-  description TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE product_categories (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  parent_id INT,
-  name VARCHAR(255) NOT NULL,
-  slug VARCHAR(255) UNIQUE,
-  description LONGTEXT,
-  icon_url VARCHAR(512),
-  is_active BOOLEAN DEFAULT TRUE,
-  display_order INT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (parent_id) REFERENCES product_categories(id) ON DELETE SET NULL,
-  INDEX idx_slug (slug),
-  INDEX idx_is_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE delivery_providers (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(255) UNIQUE,
-  api_endpoint VARCHAR(512),
-  api_key_encrypted VARCHAR(512),
-  contact_phone VARCHAR(20),
-  is_active BOOLEAN DEFAULT TRUE,
-  average_delivery_days INT,
-  base_fee DECIMAL(10,2),
-  per_km_fee DECIMAL(8,2),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE partnerships (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  partner_name VARCHAR(255),
-  partner_type ENUM('insurance','mutual','pharmacy','clinic','laboratory') DEFAULT 'insurance',
-  contact_person VARCHAR(255),
-  email VARCHAR(255),
-  phone VARCHAR(20),
-  is_active BOOLEAN DEFAULT TRUE,
-  agreement_url VARCHAR(512),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE merchant_tiers (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name ENUM('verified','premium','gold','diamond') UNIQUE,
-  display_name VARCHAR(50),
-  requirements_json JSON,
-  sales_commission_percent DECIMAL(5,2),
-  advertisement_fee DECIMAL(10,2),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ===================================================================
--- 2. USERS (Depends on: roles)
--- ===================================================================
-
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
   phone VARCHAR(20) UNIQUE,
@@ -89,18 +27,40 @@ CREATE TABLE users (
   INDEX idx_email (email),
   INDEX idx_phone (phone),
   INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE user_roles (
+CREATE TABLE IF NOT EXISTS roles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) UNIQUE NOT NULL,
+  description TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_roles (
   user_id BIGINT,
   role_id INT,
   assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, role_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE tokens (
+CREATE TABLE IF NOT EXISTS permissions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) UNIQUE NOT NULL,
+  description TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role_id INT,
+  permission_id INT,
+  PRIMARY KEY (role_id, permission_id),
+  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+  FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS tokens (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT,
   token_type ENUM('email_verification','password_reset','jwt','api','two_factor') DEFAULT 'api',
@@ -114,9 +74,137 @@ CREATE TABLE tokens (
   INDEX idx_token_hash (token_hash),
   INDEX idx_expires_at (expires_at),
   INDEX idx_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE user_profiles (
+-- ===================================================================
+-- PRODUCTS & CATALOG
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS product_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  parent_id INT,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  slug VARCHAR(255) UNIQUE,
+  description TEXT,
+  icon_url VARCHAR(512),
+  is_active BOOLEAN DEFAULT TRUE,
+  display_order INT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (parent_id) REFERENCES product_categories(id) ON DELETE SET NULL,
+  INDEX idx_slug (slug),
+  INDEX idx_is_active (is_active)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS products (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  merchant_id BIGINT,
+  sku VARCHAR(100) NOT NULL,
+  name VARCHAR(512) NOT NULL,
+  slug VARCHAR(512) UNIQUE,
+  description LONGTEXT,
+  category_id INT,
+  price DECIMAL(12,2) NOT NULL,
+  cost_price DECIMAL(12,2),
+  tax_rate DECIMAL(5,2) DEFAULT 0,
+  prescription_required BOOLEAN DEFAULT FALSE,
+  is_active BOOLEAN DEFAULT TRUE,
+  is_featured BOOLEAN DEFAULT FALSE,
+  rating DECIMAL(3,2) DEFAULT 0,
+  review_count INT DEFAULT 0,
+  status ENUM('draft','published','archived','pending_review') DEFAULT 'draft',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE SET NULL,
+  FOREIGN KEY (category_id) REFERENCES product_categories(id),
+  INDEX idx_merchant_id (merchant_id),
+  INDEX idx_category_id (category_id),
+  INDEX idx_is_active (is_active),
+  INDEX idx_slug (slug),
+  FULLTEXT INDEX ft_search (name, description)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS product_images (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  product_id BIGINT NOT NULL,
+  image_url VARCHAR(512),
+  alt_text VARCHAR(255),
+  is_primary BOOLEAN DEFAULT FALSE,
+  display_order INT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  INDEX idx_product_id (product_id)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ===================================================================
+-- ORDERS & CART
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS shopping_carts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT,
+  session_id VARCHAR(255),
+  total_price DECIMAL(12,2) DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id),
+  INDEX idx_session_id (session_id)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS shopping_cart_items (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  cart_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  price_at_add DECIMAL(12,2),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (cart_id) REFERENCES shopping_carts(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS orders (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  order_number VARCHAR(50) UNIQUE NOT NULL,
+  user_id BIGINT NOT NULL,
+  total_amount DECIMAL(14,2),
+  tax_amount DECIMAL(12,2) DEFAULT 0,
+  shipping_fee DECIMAL(12,2) DEFAULT 0,
+  discount_amount DECIMAL(12,2) DEFAULT 0,
+  final_amount DECIMAL(14,2),
+  payment_method ENUM('cash_on_delivery','wallet','card','mobile_money') DEFAULT 'cash_on_delivery',
+  payment_status ENUM('pending','paid','failed','refunded') DEFAULT 'pending',
+  order_status ENUM('pending','confirmed','processing','shipped','delivered','cancelled','returned') DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id),
+  INDEX idx_order_status (order_status),
+  INDEX idx_payment_status (payment_status),
+  INDEX idx_created_at (created_at),
+  INDEX idx_order_number (order_number)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  quantity INT NOT NULL,
+  unit_price DECIMAL(12,2),
+  tax_amount DECIMAL(12,2) DEFAULT 0,
+  subtotal DECIMAL(14,2),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id),
+  INDEX idx_order_id (order_id)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ===================================================================
+-- USER PROFILES & KYC
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS user_profiles (
   user_id BIGINT PRIMARY KEY,
   bio TEXT,
   avatar_url VARCHAR(512),
@@ -129,13 +217,9 @@ CREATE TABLE user_profiles (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ===================================================================
--- 3. KYC (Depends on: users)
--- ===================================================================
-
-CREATE TABLE kyc_submissions (
+CREATE TABLE IF NOT EXISTS kyc_submissions (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL UNIQUE,
   status ENUM('pending','approved','rejected','revision_requested') DEFAULT 'pending',
@@ -150,9 +234,9 @@ CREATE TABLE kyc_submissions (
   FOREIGN KEY (reviewer_id) REFERENCES users(id),
   INDEX idx_status (status),
   INDEX idx_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE kyc_documents (
+CREATE TABLE IF NOT EXISTS kyc_documents (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   kyc_submission_id BIGINT NOT NULL,
   document_type ENUM('id_card','passport','national_id','driver_license','proof_of_address','business_license','tax_certificate') DEFAULT 'id_card',
@@ -165,13 +249,23 @@ CREATE TABLE kyc_documents (
   verified_at DATETIME,
   FOREIGN KEY (kyc_submission_id) REFERENCES kyc_submissions(id) ON DELETE CASCADE,
   INDEX idx_verification_status (verification_status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
--- 4. MERCHANTS (Depends on: users, merchant_tiers)
+-- MERCHANTS & TIERS
 -- ===================================================================
 
-CREATE TABLE merchants (
+CREATE TABLE IF NOT EXISTS merchant_tiers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name ENUM('verified','premium','gold','diamond') UNIQUE,
+  display_name VARCHAR(50),
+  requirements_json JSON,
+  sales_commission_percent DECIMAL(5,2),
+  advertisement_fee DECIMAL(10,2),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS merchants (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNIQUE NOT NULL,
   business_name VARCHAR(255),
@@ -191,9 +285,9 @@ CREATE TABLE merchants (
   FOREIGN KEY (tier_id) REFERENCES merchant_tiers(id),
   INDEX idx_status (status),
   INDEX idx_tier_id (tier_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE merchant_shipping_info (
+CREATE TABLE IF NOT EXISTS merchant_shipping_info (
   merchant_id BIGINT PRIMARY KEY,
   warehouse_address VARCHAR(512),
   warehouse_city VARCHAR(100),
@@ -205,9 +299,9 @@ CREATE TABLE merchant_shipping_info (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE merchant_fees (
+CREATE TABLE IF NOT EXISTS merchant_fees (
   merchant_id BIGINT PRIMARY KEY,
   commission_percent DECIMAL(5,2),
   return_fee_percent DECIMAL(5,2),
@@ -215,41 +309,22 @@ CREATE TABLE merchant_fees (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
--- 5. PRODUCTS & VARIANTS (Depends on: merchants, categories)
+-- PRODUCTS & CATALOG (EXTENDED)
 -- ===================================================================
 
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS product_attributes (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  merchant_id BIGINT NOT NULL,
-  sku VARCHAR(100) NOT NULL,
-  name VARCHAR(512) NOT NULL,
-  slug VARCHAR(512) UNIQUE,
-  description LONGTEXT,
-  category_id INT,
-  price DECIMAL(12,2) NOT NULL,
-  cost_price DECIMAL(12,2),
-  tax_rate DECIMAL(5,2) DEFAULT 0,
-  prescription_required BOOLEAN DEFAULT FALSE,
-  is_active BOOLEAN DEFAULT TRUE,
-  is_featured BOOLEAN DEFAULT FALSE,
-  rating DECIMAL(3,2) DEFAULT 0,
-  review_count INT DEFAULT 0,
-  status ENUM('draft','published','archived','pending_review') DEFAULT 'draft',
+  product_id BIGINT NOT NULL,
+  attribute_name VARCHAR(100),
+  attribute_value VARCHAR(255),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE,
-  FOREIGN KEY (category_id) REFERENCES product_categories(id),
-  INDEX idx_merchant_id (merchant_id),
-  INDEX idx_category_id (category_id),
-  INDEX idx_is_active (is_active),
-  INDEX idx_slug (slug),
-  FULLTEXT INDEX ft_search (name, description)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE product_variants (
+CREATE TABLE IF NOT EXISTS product_variants (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   product_id BIGINT NOT NULL,
   sku_suffix VARCHAR(50),
@@ -259,33 +334,9 @@ CREATE TABLE product_variants (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE product_images (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  product_id BIGINT NOT NULL,
-  variant_id BIGINT,
-  image_url VARCHAR(512),
-  alt_text VARCHAR(255),
-  is_primary BOOLEAN DEFAULT FALSE,
-  display_order INT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-  FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL,
-  INDEX idx_product_id (product_id),
-  INDEX idx_variant_id (variant_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE product_attributes (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  product_id BIGINT NOT NULL,
-  attribute_name VARCHAR(100),
-  attribute_value VARCHAR(255),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE merchant_stocks (
+CREATE TABLE IF NOT EXISTS merchant_stocks (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   merchant_id BIGINT NOT NULL,
   product_id BIGINT NOT NULL,
@@ -300,194 +351,16 @@ CREATE TABLE merchant_stocks (
   FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL,
   INDEX idx_merchant_id (merchant_id),
   INDEX idx_product_id (product_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE product_reviews (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  product_id BIGINT NOT NULL,
-  user_id BIGINT NOT NULL,
-  order_id BIGINT,
-  rating INT DEFAULT 5,
-  title VARCHAR(255),
-  comment TEXT,
-  is_verified_purchase BOOLEAN DEFAULT TRUE,
-  helpful_count INT DEFAULT 0,
-  status ENUM('pending','approved','rejected','flagged') DEFAULT 'pending',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_product_id (product_id),
-  INDEX idx_rating (rating)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Note: Products now includes merchant_id in CREATE TABLE statement
+-- Note: Product images now includes variant_id in CREATE TABLE statement
 
 -- ===================================================================
--- 6. WALLET (Depends on: users)
+-- ORDERS & CART (EXTENDED)
 -- ===================================================================
 
-CREATE TABLE wallets (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNIQUE NOT NULL,
-  balance DECIMAL(14,2) DEFAULT 0,
-  currency VARCHAR(3) DEFAULT 'USD',
-  reserved_balance DECIMAL(14,2) DEFAULT 0,
-  available_balance DECIMAL(14,2) DEFAULT 0,
-  total_received DECIMAL(14,2) DEFAULT 0,
-  total_spent DECIMAL(14,2) DEFAULT 0,
-  status ENUM('active','frozen','suspended') DEFAULT 'active',
-  last_transaction_at DATETIME,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_user_id (user_id),
-  INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE wallet_transactions (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  wallet_id BIGINT NOT NULL,
-  transaction_type ENUM('credit','debit','reserve','release') DEFAULT 'debit',
-  amount DECIMAL(14,2) NOT NULL,
-  currency VARCHAR(3) DEFAULT 'USD',
-  reference_id VARCHAR(255),
-  reference_type VARCHAR(100),
-  description TEXT,
-  balance_before DECIMAL(14,2),
-  balance_after DECIMAL(14,2),
-  external_reference VARCHAR(255),
-  payment_method ENUM('wallet','card','mobile_money','bank_transfer','cash','bonus') DEFAULT 'wallet',
-  metadata JSON,
-  status ENUM('pending','completed','failed','refunded') DEFAULT 'pending',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
-  INDEX idx_wallet_id (wallet_id),
-  INDEX idx_reference_id (reference_id),
-  INDEX idx_created_at (created_at),
-  INDEX idx_status (status),
-  INDEX idx_external_reference (external_reference)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE wallet_balance_history (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  wallet_id BIGINT NOT NULL,
-  balance DECIMAL(14,2),
-  reserved_balance DECIMAL(14,2),
-  available_balance DECIMAL(14,2),
-  snapshot_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
-  INDEX idx_wallet_id (wallet_id),
-  INDEX idx_snapshot_date (snapshot_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE wallet_topups (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  wallet_id BIGINT NOT NULL,
-  amount DECIMAL(14,2),
-  payment_method ENUM('card','mobile_money','bank_transfer') DEFAULT 'mobile_money',
-  external_transaction_id VARCHAR(255),
-  status ENUM('pending','completed','failed') DEFAULT 'pending',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  completed_at DATETIME,
-  FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
-  INDEX idx_wallet_id (wallet_id),
-  INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE wallet_reservations (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  wallet_id BIGINT NOT NULL,
-  order_id BIGINT,
-  amount DECIMAL(14,2),
-  reason ENUM('order_payment','merchant_settlement','fee','refund') DEFAULT 'order_payment',
-  status ENUM('reserved','released','consumed') DEFAULT 'reserved',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  released_at DATETIME,
-  FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
-  INDEX idx_wallet_id (wallet_id),
-  INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ===================================================================
--- 7. SHOPPING & ORDERS (Depends on: users, merchants, products)
--- ===================================================================
-
-CREATE TABLE shopping_carts (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT,
-  session_id VARCHAR(255),
-  total_price DECIMAL(12,2) DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_user_id (user_id),
-  INDEX idx_session_id (session_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE shopping_cart_items (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  cart_id BIGINT NOT NULL,
-  product_id BIGINT NOT NULL,
-  variant_id BIGINT,
-  merchant_id BIGINT NOT NULL,
-  quantity INT NOT NULL DEFAULT 1,
-  price_at_add DECIMAL(12,2),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (cart_id) REFERENCES shopping_carts(id) ON DELETE CASCADE,
-  FOREIGN KEY (product_id) REFERENCES products(id),
-  FOREIGN KEY (variant_id) REFERENCES product_variants(id),
-  FOREIGN KEY (merchant_id) REFERENCES merchants(id),
-  INDEX idx_cart_id (cart_id),
-  INDEX idx_merchant_id (merchant_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE orders (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  order_number VARCHAR(50) UNIQUE NOT NULL,
-  user_id BIGINT NOT NULL,
-  total_amount DECIMAL(14,2),
-  tax_amount DECIMAL(12,2) DEFAULT 0,
-  shipping_fee DECIMAL(12,2) DEFAULT 0,
-  discount_amount DECIMAL(12,2) DEFAULT 0,
-  final_amount DECIMAL(14,2),
-  payment_method ENUM('cash_on_delivery','wallet','card','mobile_money') DEFAULT 'cash_on_delivery',
-  payment_status ENUM('pending','paid','failed','refunded') DEFAULT 'pending',
-  order_status ENUM('pending','confirmed','processing','shipped','delivered','cancelled','returned') DEFAULT 'pending',
-  delivery_type ENUM('home_delivery','pickup') DEFAULT 'home_delivery',
-  requires_prescription BOOLEAN DEFAULT FALSE,
-  prescription_verified BOOLEAN DEFAULT FALSE,
-  prescription_verified_by BIGINT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (prescription_verified_by) REFERENCES users(id),
-  INDEX idx_user_id (user_id),
-  INDEX idx_order_status (order_status),
-  INDEX idx_payment_status (payment_status),
-  INDEX idx_created_at (created_at),
-  INDEX idx_order_number (order_number)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE order_items (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  order_id BIGINT NOT NULL,
-  product_id BIGINT NOT NULL,
-  variant_id BIGINT,
-  merchant_id BIGINT NOT NULL,
-  quantity INT NOT NULL,
-  unit_price DECIMAL(12,2),
-  tax_amount DECIMAL(12,2) DEFAULT 0,
-  subtotal DECIMAL(14,2),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-  FOREIGN KEY (product_id) REFERENCES products(id),
-  FOREIGN KEY (variant_id) REFERENCES product_variants(id),
-  FOREIGN KEY (merchant_id) REFERENCES merchants(id),
-  INDEX idx_order_id (order_id),
-  INDEX idx_merchant_id (merchant_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE order_status_logs (
+CREATE TABLE IF NOT EXISTS order_status_logs (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   order_id BIGINT NOT NULL,
   previous_status VARCHAR(50),
@@ -499,9 +372,9 @@ CREATE TABLE order_status_logs (
   FOREIGN KEY (changed_by) REFERENCES users(id),
   INDEX idx_order_id (order_id),
   INDEX idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE delivery_addresses (
+CREATE TABLE IF NOT EXISTS delivery_addresses (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   order_id BIGINT NOT NULL,
   user_id BIGINT NOT NULL,
@@ -520,13 +393,29 @@ CREATE TABLE delivery_addresses (
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id),
   INDEX idx_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Note: Cart items, order items, and orders now include all columns in CREATE TABLE statements
 
 -- ===================================================================
--- 8. DELIVERY (Depends on: orders, delivery_providers, users)
+-- DELIVERY MANAGEMENT
 -- ===================================================================
 
-CREATE TABLE delivery_personnel (
+CREATE TABLE IF NOT EXISTS delivery_providers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) UNIQUE,
+  api_endpoint VARCHAR(512),
+  api_key_encrypted VARCHAR(512),
+  contact_phone VARCHAR(20),
+  is_active BOOLEAN DEFAULT TRUE,
+  average_delivery_days INT,
+  base_fee DECIMAL(10,2),
+  per_km_fee DECIMAL(8,2),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS delivery_personnel (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNIQUE NOT NULL,
   provider_id INT,
@@ -547,9 +436,9 @@ CREATE TABLE delivery_personnel (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (provider_id) REFERENCES delivery_providers(id),
   INDEX idx_is_available (is_available)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE shipments (
+CREATE TABLE IF NOT EXISTS shipments (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   order_id BIGINT NOT NULL UNIQUE,
   tracking_number VARCHAR(100) UNIQUE,
@@ -574,9 +463,9 @@ CREATE TABLE shipments (
   INDEX idx_order_id (order_id),
   INDEX idx_status (status),
   INDEX idx_tracking_number (tracking_number)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE shipment_tracking_logs (
+CREATE TABLE IF NOT EXISTS shipment_tracking_logs (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   shipment_id BIGINT NOT NULL,
   status VARCHAR(50),
@@ -588,89 +477,95 @@ CREATE TABLE shipment_tracking_logs (
   FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE CASCADE,
   INDEX idx_shipment_id (shipment_id),
   INDEX idx_timestamp (timestamp)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
--- 9. PAYMENTS (Depends on: users, orders)
+-- WALLET & TRANSACTIONS
 -- ===================================================================
 
-CREATE TABLE user_payment_methods (
+CREATE TABLE IF NOT EXISTS wallets (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT NOT NULL,
-  payment_method_type ENUM('card','mobile_money','bank_account','wallet') DEFAULT 'card',
-  name VARCHAR(100),
-  gateway_id VARCHAR(255),
-  last_four VARCHAR(4),
-  is_default BOOLEAN DEFAULT FALSE,
-  is_verified BOOLEAN DEFAULT FALSE,
-  expires_at DATETIME,
+  user_id BIGINT UNIQUE NOT NULL,
+  currency VARCHAR(3) DEFAULT 'USD',
+  balance DECIMAL(14,2) DEFAULT 0,
+  reserved_balance DECIMAL(14,2) DEFAULT 0,
+  available_balance DECIMAL(14,2) DEFAULT 0,
+  total_received DECIMAL(14,2) DEFAULT 0,
+  total_spent DECIMAL(14,2) DEFAULT 0,
+  status ENUM('active','frozen','suspended') DEFAULT 'active',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE payment_transactions (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  order_id BIGINT NOT NULL,
-  amount DECIMAL(14,2),
-  currency VARCHAR(3) DEFAULT 'USD',
-  payment_method ENUM('wallet','card','mobile_money','cash_on_delivery') DEFAULT 'wallet',
-  payment_gateway VARCHAR(50),
-  gateway_transaction_id VARCHAR(255),
-  status ENUM('initiated','processing','completed','failed','refunded','cancelled') DEFAULT 'initiated',
-  payment_date DATETIME,
-  completion_date DATETIME,
-  failure_reason TEXT,
-  metadata JSON,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-  INDEX idx_order_id (order_id),
-  INDEX idx_status (status),
-  INDEX idx_gateway_transaction_id (gateway_transaction_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE payment_reconciliations (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  payment_transaction_id BIGINT NOT NULL,
-  gateway_receipt_reference VARCHAR(255),
-  settlement_status ENUM('pending','settled','failed','disputed') DEFAULT 'pending',
-  settled_amount DECIMAL(14,2),
-  settled_date DATETIME,
-  fees DECIMAL(10,2),
-  notes TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (payment_transaction_id) REFERENCES payment_transactions(id) ON DELETE CASCADE,
-  INDEX idx_payment_transaction_id (payment_transaction_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE refunds (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  order_id BIGINT NOT NULL,
-  payment_transaction_id BIGINT,
-  amount DECIMAL(14,2),
-  reason ENUM('customer_request','payment_failed','item_unavailable','damaged_item','prescription_rejected','order_cancelled') DEFAULT 'customer_request',
-  status ENUM('pending','processing','completed','failed','rejected') DEFAULT 'pending',
-  processed_by BIGINT,
-  processed_date DATETIME,
-  refund_method ENUM('original_method','wallet','bank_transfer') DEFAULT 'original_method',
-  notes TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-  FOREIGN KEY (payment_transaction_id) REFERENCES payment_transactions(id),
-  FOREIGN KEY (processed_by) REFERENCES users(id),
-  INDEX idx_order_id (order_id),
+  INDEX idx_user_id (user_id),
   INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  wallet_id BIGINT NOT NULL,
+  transaction_type ENUM('credit','debit','reserve','release') DEFAULT 'debit',
+  amount DECIMAL(14,2) NOT NULL,
+  balance_before DECIMAL(14,2),
+  balance_after DECIMAL(14,2),
+  external_reference VARCHAR(255),
+  payment_method ENUM('wallet','card','mobile_money','bank_transfer','cash','bonus') DEFAULT 'wallet',
+  description TEXT,
+  metadata JSON,
+  status ENUM('pending','completed','failed','refunded') DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
+  INDEX idx_wallet_id (wallet_id),
+  INDEX idx_status (status),
+  INDEX idx_external_reference (external_reference),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS wallet_balance_history (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  wallet_id BIGINT NOT NULL,
+  balance DECIMAL(14,2),
+  reserved_balance DECIMAL(14,2),
+  available_balance DECIMAL(14,2),
+  snapshot_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
+  INDEX idx_wallet_id (wallet_id),
+  INDEX idx_snapshot_date (snapshot_date)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS wallet_topups (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  wallet_id BIGINT NOT NULL,
+  amount DECIMAL(14,2),
+  payment_method ENUM('card','mobile_money','bank_transfer') DEFAULT 'mobile_money',
+  external_transaction_id VARCHAR(255),
+  status ENUM('pending','completed','failed') DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  completed_at DATETIME,
+  FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
+  INDEX idx_wallet_id (wallet_id),
+  INDEX idx_status (status)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS wallet_reservations (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  wallet_id BIGINT NOT NULL,
+  order_id BIGINT,
+  amount DECIMAL(14,2),
+  reason ENUM('order_payment','merchant_settlement','fee','refund') DEFAULT 'order_payment',
+  status ENUM('reserved','released','consumed') DEFAULT 'reserved',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  released_at DATETIME,
+  FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
+  INDEX idx_wallet_id (wallet_id),
+  INDEX idx_status (status)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
--- 10. PRESCRIPTIONS & MEDICAL RECORDS (Depends on: users, orders)
+-- PRESCRIPTIONS & MEDICAL RECORDS
 -- ===================================================================
 
-CREATE TABLE prescriptions (
+CREATE TABLE IF NOT EXISTS prescriptions (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   order_id BIGINT NOT NULL,
   user_id BIGINT NOT NULL,
@@ -691,9 +586,9 @@ CREATE TABLE prescriptions (
   FOREIGN KEY (verified_by) REFERENCES users(id),
   INDEX idx_user_id (user_id),
   INDEX idx_verification_status (verification_status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE prescription_verification_logs (
+CREATE TABLE IF NOT EXISTS prescription_verification_logs (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   prescription_id BIGINT NOT NULL,
   verified_by BIGINT,
@@ -702,9 +597,9 @@ CREATE TABLE prescription_verification_logs (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE CASCADE,
   FOREIGN KEY (verified_by) REFERENCES users(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE medical_records (
+CREATE TABLE IF NOT EXISTS medical_records (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   record_type ENUM('diagnosis','treatment','lab_result','vaccination','consultation','surgery','allergy','medication') DEFAULT 'consultation',
@@ -720,9 +615,9 @@ CREATE TABLE medical_records (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_user_id (user_id),
   INDEX idx_record_type (record_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE medical_record_access (
+CREATE TABLE IF NOT EXISTS medical_record_access (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   medical_record_id BIGINT NOT NULL,
   authorized_user_id BIGINT NOT NULL,
@@ -732,9 +627,9 @@ CREATE TABLE medical_record_access (
   FOREIGN KEY (medical_record_id) REFERENCES medical_records(id) ON DELETE CASCADE,
   FOREIGN KEY (authorized_user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE KEY unique_access (medical_record_id, authorized_user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE consultations (
+CREATE TABLE IF NOT EXISTS consultations (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   doctor_id BIGINT,
@@ -750,13 +645,109 @@ CREATE TABLE consultations (
   FOREIGN KEY (prescription_id) REFERENCES prescriptions(id),
   INDEX idx_user_id (user_id),
   INDEX idx_appointment_date (appointment_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
--- 11. REVIEWS (Depends on: products, merchants, delivery_personnel, users)
+-- PAYMENTS
 -- ===================================================================
 
-CREATE TABLE merchant_reviews (
+CREATE TABLE IF NOT EXISTS user_payment_methods (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  payment_method_type ENUM('card','mobile_money','bank_account','wallet') DEFAULT 'card',
+  name VARCHAR(100),
+  gateway_id VARCHAR(255),
+  last_four VARCHAR(4),
+  is_default BOOLEAN DEFAULT FALSE,
+  is_verified BOOLEAN DEFAULT FALSE,
+  expires_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS payment_transactions (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT NOT NULL,
+  amount DECIMAL(14,2),
+  currency VARCHAR(3) DEFAULT 'USD',
+  payment_method ENUM('wallet','card','mobile_money','cash_on_delivery') DEFAULT 'wallet',
+  payment_gateway VARCHAR(50),
+  gateway_transaction_id VARCHAR(255),
+  status ENUM('initiated','processing','completed','failed','refunded','cancelled') DEFAULT 'initiated',
+  payment_date DATETIME,
+  completion_date DATETIME,
+  failure_reason TEXT,
+  metadata JSON,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  INDEX idx_order_id (order_id),
+  INDEX idx_status (status),
+  INDEX idx_gateway_transaction_id (gateway_transaction_id)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS payment_reconciliations (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  payment_transaction_id BIGINT NOT NULL,
+  gateway_receipt_reference VARCHAR(255),
+  settlement_status ENUM('pending','settled','failed','disputed') DEFAULT 'pending',
+  settled_amount DECIMAL(14,2),
+  settled_date DATETIME,
+  fees DECIMAL(10,2),
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (payment_transaction_id) REFERENCES payment_transactions(id) ON DELETE CASCADE,
+  INDEX idx_payment_transaction_id (payment_transaction_id)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS refunds (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT NOT NULL,
+  payment_transaction_id BIGINT,
+  amount DECIMAL(14,2),
+  reason ENUM('customer_request','payment_failed','item_unavailable','damaged_item','prescription_rejected','order_cancelled') DEFAULT 'customer_request',
+  status ENUM('pending','processing','completed','failed','rejected') DEFAULT 'pending',
+  processed_by BIGINT,
+  processed_date DATETIME,
+  refund_method ENUM('original_method','wallet','bank_transfer') DEFAULT 'original_method',
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (payment_transaction_id) REFERENCES payment_transactions(id),
+  FOREIGN KEY (processed_by) REFERENCES users(id),
+  INDEX idx_order_id (order_id),
+  INDEX idx_status (status)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ===================================================================
+-- REVIEWS & RATINGS
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS product_reviews (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  product_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  order_id BIGINT,
+  rating INT DEFAULT 5,
+  title VARCHAR(255),
+  comment TEXT,
+  is_verified_purchase BOOLEAN DEFAULT TRUE,
+  helpful_count INT DEFAULT 0,
+  status ENUM('pending','approved','rejected','flagged') DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
+  INDEX idx_product_id (product_id),
+  INDEX idx_rating (rating)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS merchant_reviews (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   merchant_id BIGINT NOT NULL,
   user_id BIGINT NOT NULL,
@@ -772,9 +763,9 @@ CREATE TABLE merchant_reviews (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
   INDEX idx_merchant_id (merchant_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE delivery_reviews (
+CREATE TABLE IF NOT EXISTS delivery_reviews (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   delivery_personnel_id BIGINT NOT NULL,
   user_id BIGINT NOT NULL,
@@ -788,13 +779,13 @@ CREATE TABLE delivery_reviews (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE SET NULL,
   INDEX idx_delivery_personnel_id (delivery_personnel_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
--- 12. NOTIFICATIONS & SUPPORT (Depends on: users, orders)
+-- NOTIFICATIONS & SUPPORT
 -- ===================================================================
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   notification_type ENUM('order_status','payment','promotion','system','support','alert') DEFAULT 'system',
@@ -808,9 +799,9 @@ CREATE TABLE notifications (
   INDEX idx_user_id (user_id),
   INDEX idx_is_read (is_read),
   INDEX idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE reports (
+CREATE TABLE IF NOT EXISTS reports (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   report_type ENUM('product','merchant','user','review','prescription','order') DEFAULT 'product',
   reported_item_id VARCHAR(50),
@@ -826,9 +817,9 @@ CREATE TABLE reports (
   FOREIGN KEY (assigned_to) REFERENCES users(id),
   INDEX idx_status (status),
   INDEX idx_report_type (report_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE support_tickets (
+CREATE TABLE IF NOT EXISTS support_tickets (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   ticket_number VARCHAR(50) UNIQUE,
@@ -845,9 +836,9 @@ CREATE TABLE support_tickets (
   FOREIGN KEY (assigned_to) REFERENCES users(id),
   INDEX idx_status (status),
   INDEX idx_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE support_messages (
+CREATE TABLE IF NOT EXISTS support_messages (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   ticket_id BIGINT NOT NULL,
   user_id BIGINT,
@@ -858,13 +849,13 @@ CREATE TABLE support_messages (
   FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id),
   INDEX idx_ticket_id (ticket_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
--- 13. ANALYTICS & LOGGING
+-- ANALYTICS & LOGGING
 -- ===================================================================
 
-CREATE TABLE analytics_events (
+CREATE TABLE IF NOT EXISTS analytics_events (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT,
   event_type ENUM('page_view','product_view','add_to_cart','remove_from_cart','checkout','payment','search','filter','click','scroll') DEFAULT 'page_view',
@@ -880,9 +871,9 @@ CREATE TABLE analytics_events (
   INDEX idx_user_id (user_id),
   INDEX idx_event_type (event_type),
   INDEX idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT,
   action VARCHAR(255),
@@ -896,9 +887,9 @@ CREATE TABLE audit_logs (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
   INDEX idx_entity_type (entity_type),
   INDEX idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE api_logs (
+CREATE TABLE IF NOT EXISTS api_logs (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   endpoint VARCHAR(512),
   method VARCHAR(10),
@@ -910,13 +901,13 @@ CREATE TABLE api_logs (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
   INDEX idx_endpoint (endpoint),
   INDEX idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
--- 14. PROMOTIONS & PARTNERSHIPS (Depends on: users, partnerships)
+-- PROMOTIONS & PARTNERSHIPS
 -- ===================================================================
 
-CREATE TABLE promotion_codes (
+CREATE TABLE IF NOT EXISTS promotion_codes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   code VARCHAR(50) UNIQUE NOT NULL,
   discount_type ENUM('percentage','fixed_amount') DEFAULT 'percentage',
@@ -935,9 +926,9 @@ CREATE TABLE promotion_codes (
   FOREIGN KEY (created_by) REFERENCES users(id),
   INDEX idx_code (code),
   INDEX idx_is_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE promotion_code_usages (
+CREATE TABLE IF NOT EXISTS promotion_code_usages (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   promotion_code_id INT NOT NULL,
   user_id BIGINT NOT NULL,
@@ -947,9 +938,21 @@ CREATE TABLE promotion_code_usages (
   FOREIGN KEY (promotion_code_id) REFERENCES promotion_codes(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE insurance_plans (
+CREATE TABLE IF NOT EXISTS partnerships (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  partner_name VARCHAR(255),
+  partner_type ENUM('insurance','mutual','pharmacy','clinic','laboratory') DEFAULT 'insurance',
+  contact_person VARCHAR(255),
+  email VARCHAR(255),
+  phone VARCHAR(20),
+  is_active BOOLEAN DEFAULT TRUE,
+  agreement_url VARCHAR(512),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS insurance_plans (
   id INT AUTO_INCREMENT PRIMARY KEY,
   partnership_id INT,
   plan_name VARCHAR(255),
@@ -960,9 +963,9 @@ CREATE TABLE insurance_plans (
   is_active BOOLEAN DEFAULT TRUE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (partnership_id) REFERENCES partnerships(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE insurance_subscriptions (
+CREATE TABLE IF NOT EXISTS insurance_subscriptions (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT NOT NULL,
   insurance_plan_id INT,
@@ -977,20 +980,89 @@ CREATE TABLE insurance_subscriptions (
   FOREIGN KEY (insurance_plan_id) REFERENCES insurance_plans(id),
   INDEX idx_user_id (user_id),
   INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
--- SEED DATA
+-- Default Roles
 -- ===================================================================
 
-INSERT INTO roles (id, name, description) VALUES
-(1, 'admin', 'Administrator with full access'),
-(2, 'moderator', 'Moderator for content management'),
-(3, 'merchant', 'Merchant selling on marketplace'),
-(4, 'customer', 'Regular customer'),
-(5, 'deliverer', 'Delivery personnel'),
-(6, 'partner', 'Partner organization')
-ON DUPLICATE KEY UPDATE id=id;
+INSERT INTO roles (name, description) VALUES
+('admin', 'Administrator with full access'),
+('moderator', 'Moderator for content management'),
+('merchant', 'Merchant selling on marketplace'),
+('customer', 'Regular customer'),
+('deliverer', 'Delivery personnel'),
+('partner', 'Partner organization')
+ON DUPLICATE KEY UPDATE name=name;
+
+-- ===================================================================
+-- Default Permissions
+-- ===================================================================
+
+INSERT INTO permissions (name, description) VALUES
+('manage_users', 'Create, read, update, delete users'),
+('manage_roles', 'Manage roles and permissions'),
+('manage_products', 'CRUD products'),
+('create_product', 'Create a product'),
+('update_product', 'Update a product'),
+('delete_product', 'Delete a product'),
+('view_products', 'View product catalog'),
+('manage_orders', 'Manage all orders'),
+('create_order', 'Place an order'),
+('update_order', 'Update order status'),
+('view_orders', 'View orders'),
+('cancel_order', 'Cancel an order'),
+('manage_wallet', 'Manage wallet system'),
+('view_wallet', 'View own wallet'),
+('topup_wallet', 'Top up wallet'),
+('transfer_funds', 'Transfer wallet funds'),
+('manage_kyc', 'Review KYC submissions'),
+('submit_kyc', 'Submit KYC documents'),
+('manage_merchants', 'Manage merchant accounts'),
+('manage_deliveries', 'Manage delivery assignments'),
+('view_analytics', 'View platform analytics'),
+('manage_prescriptions', 'Verify prescriptions'),
+('manage_reports', 'Handle reports and flags'),
+('manage_support', 'Handle support tickets'),
+('manage_promotions', 'Manage promotion codes')
+ON DUPLICATE KEY UPDATE name=name;
+
+-- ===================================================================
+-- Default Role-Permission Mappings
+-- ===================================================================
+
+-- Admin gets all permissions
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'admin'
+ON DUPLICATE KEY UPDATE role_id=role_id;
+
+-- Customer permissions
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p
+WHERE r.name = 'customer' AND p.name IN ('view_products','create_order','view_orders','cancel_order','view_wallet','topup_wallet','transfer_funds','submit_kyc')
+ON DUPLICATE KEY UPDATE role_id=role_id;
+
+-- Merchant permissions
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p
+WHERE r.name = 'merchant' AND p.name IN ('view_products','create_product','update_product','delete_product','view_orders','update_order','view_wallet','topup_wallet','transfer_funds','submit_kyc')
+ON DUPLICATE KEY UPDATE role_id=role_id;
+
+-- Moderator permissions
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p
+WHERE r.name = 'moderator' AND p.name IN ('manage_users','view_products','manage_orders','manage_kyc','manage_prescriptions','manage_reports','manage_support','view_analytics')
+ON DUPLICATE KEY UPDATE role_id=role_id;
+
+-- Deliverer permissions
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p
+WHERE r.name = 'deliverer' AND p.name IN ('view_orders','view_wallet','topup_wallet','transfer_funds','submit_kyc')
+ON DUPLICATE KEY UPDATE role_id=role_id;
+
+-- ===================================================================
+-- Default Categories
+-- ===================================================================
 
 INSERT INTO product_categories (name, slug, description, is_active) VALUES
 ('Médicaments', 'medicaments', 'Produits pharmaceutiques', TRUE),
@@ -999,7 +1071,3 @@ INSERT INTO product_categories (name, slug, description, is_active) VALUES
 ('Soins & Pansements', 'soins-pansements', 'Produits de soin et pansements', TRUE),
 ('Équipement Médical', 'equipement-medical', 'Équipement et appareils médicaux', TRUE)
 ON DUPLICATE KEY UPDATE slug=slug;
-
--- ===================================================================
--- End of Schema
--- ===================================================================

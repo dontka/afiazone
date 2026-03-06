@@ -6,9 +6,6 @@ namespace App\Repositories;
 
 use App\Models\Wallet;
 
-/**
- * Wallet Repository
- */
 class WalletRepository extends BaseRepository
 {
     public function __construct()
@@ -16,30 +13,26 @@ class WalletRepository extends BaseRepository
         parent::__construct(new Wallet());
     }
 
-    /**
-     * Find by user ID
-     */
     public function findByUserId(int $userId): ?Wallet
     {
-        // TODO: Implement custom query
-        return null;
+        /** @var ?Wallet */
+        return $this->findBy('user_id', (string) $userId);
     }
 
-    /**
-     * Get balance
-     */
     public function getBalance(int $userId): float
     {
         $wallet = $this->findByUserId($userId);
-        return $wallet ? $wallet->balance : 0;
+        return $wallet ? (float) $wallet->balance : 0;
     }
 
-    /**
-     * Get available funds
-     */
-    public function getAvailable(int $userId): float
+    public function getAvailableBalance(int $userId): float
     {
         $wallet = $this->findByUserId($userId);
-        return $wallet ? $wallet->getAvailable() : 0;
+        return $wallet ? (float) $wallet->available_balance : 0;
+    }
+
+    public function getOrCreate(int $userId): Wallet
+    {
+        return Wallet::getOrCreate($userId);
     }
 }

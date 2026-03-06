@@ -5,109 +5,108 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Product;
+use App\Repositories\ProductRepository;
 
-/**
- * Product Service
- */
 class ProductService extends BaseService
 {
-    /**
-     * Get all products with filters
-     */
+    private ProductRepository $productRepo;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->productRepo = new ProductRepository();
+    }
+
     public function getAll(array $filters = [], int $page = 1, int $perPage = 20): array
     {
-        // TODO: Query products with filters
-        // TODO: Apply pagination
-        // TODO: Cache results
+        if (!empty($filters['search'])) {
+            return $this->productRepo->search($filters['search'], $page, $perPage);
+        }
 
-        $products = Product::all();
+        if (!empty($filters['category_id'])) {
+            return $this->productRepo->findByCategory((int) $filters['category_id'], $page, $perPage);
+        }
 
-        return [
-            'products' => $products,
-            'total' => count($products),
-            'page' => $page,
-            'per_page' => $perPage,
-        ];
+        return $this->productRepo->getPublished($page, $perPage);
     }
 
-    /**
-     * Get product by ID
-     */
     public function getById(int $id): ?Product
     {
-        return Product::find($id);
+        /** @var ?Product */
+        return $this->productRepo->find($id);
     }
 
-    /**
-     * Create product
-     */
-    public function create(array $data, int $merchantId): ?Product
+    public function create(array $data, int $merchantId): Product
     {
-        // Validate
         $errors = $this->validate($data, [
             'name' => 'required',
+            'sku' => 'required',
             'price' => 'required|numeric',
             'category_id' => 'required|numeric',
         ]);
+        $this->throwIfErrors($errors);
 
-        if (!empty($errors)) {
-            throw new \Exception('Validation failed');
-        }
+        $slug = $this->generateSlug($data['name']);
 
         $product = Product::create([
             'merchant_id' => $merchantId,
+            'sku' => $data['sku'],
             'name' => $data['name'],
+            'slug' => $slug,
             'description' => $data['description'] ?? '',
             'price' => $data['price'],
+            'cost_price' => $data['cost_price'] ?? null,
+            'tax_rate' => $data['tax_rate'] ?? 0,
             'category_id' => $data['category_id'],
             'prescription_required' => $data['prescription_required'] ?? false,
+            'is_active' => true,
+            'status' => 'draft',
         ]);
 
-        $this->log('Product created', ['product_id' => $product?->id]);
-
+        $this->log('Product created', ['product_id' => $product->id, 'merchant_id' => $merchantId]);
         return $product;
     }
 
-    /**
-     * Update product
-     */
     public function update(int $id, array $data): bool
     {
-        $product = Product::find($id);
-
+        $product = $this->productRepo->find($id);
         if (!$product) {
-            return false;
+            throw new \App\Exceptions\NotFoundException('Product not found');
         }
 
-        if ($product->update($data)) {
+        $result = $product->update($data);
+        if ($result) {
             $this->log('Product updated', ['product_id' => $id]);
-            return true;
         }
-
-        return false;
+        return $result;
     }
 
-    /**
-     * Delete product
-     */
     public function delete(int $id): bool
     {
-        $product = Product::find($id);
-
-        if ($product && $product->delete()) {
+        $result = $this->productRepo->delete($id);
+        if ($result) {
             $this->log('Product deleted', ['product_id' => $id]);
-            return true;
         }
-
-        return false;
+        return $result;
     }
 
-    /**
-     * Search products
-     */
-    public function search(string $query, int $limit = 20): array
+    public function search(string $query, int $page = 1, int $perPage = 20): array
     {
-        // TODO: Implement full-text search
-        return [];
+        return $this->productRepo->search($query, $page, $perPage);
+    }
+
+    public function getFeatured(int $limit = 10): array
+    {
+        return $this->productRepo->getFeatured($limit);
+    }
+
+    private function generateSlug(string $name): string
+    {
+        $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $name), '-'));
+        $existing = Product::findBySlug($slug);
+        if ($existing) {
+            $slug .= '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+        }
+        return $slug;
     }
 }

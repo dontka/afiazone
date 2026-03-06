@@ -5,128 +5,222 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Wallet;
+use App\Models\WalletTransaction;
+use App\Models\WalletReservation;
+use App\Models\BaseModel;
+use App\Repositories\WalletRepository;
 
-/**
- * Wallet Service
- */
 class WalletService extends BaseService
 {
-    /**
-     * Get wallet
-     */
-    public function getWallet(int $userId): ?Wallet
+    private WalletRepository $walletRepo;
+
+    public function __construct()
     {
-        // TODO: Fetch wallet by user_id
-        return null;
+        parent::__construct();
+        $this->walletRepo = new WalletRepository();
     }
 
-    /**
-     * Get balance
-     */
+    public function getWallet(int $userId): Wallet
+    {
+        return $this->walletRepo->getOrCreate($userId);
+    }
+
     public function getBalance(int $userId): float
     {
-        $wallet = $this->getWallet($userId);
-        return $wallet ? $wallet->balance : 0;
+        return $this->walletRepo->getBalance($userId);
+    }
+
+    public function getAvailableBalance(int $userId): float
+    {
+        return $this->walletRepo->getAvailableBalance($userId);
     }
 
     /**
-     * Get available balance
+     * Credit wallet (top-up, refund, etc.)
      */
-    public function getAvailable(int $userId): float
-    {
+    public function credit(
+        int $userId,
+        float $amount,
+        string $description = '',
+        string $paymentMethod = 'wallet',
+        ?string $externalRef = null
+    ): WalletTransaction {
+        if ($amount <= 0) {
+            $this->throwIfErrors(['amount' => 'Amount must be positive']);
+        }
+
         $wallet = $this->getWallet($userId);
-        return $wallet ? $wallet->getAvailable() : 0;
+
+        return BaseModel::transaction(function () use ($wallet, $amount, $description, $paymentMethod, $externalRef) {
+            $balanceBefore = (float) $wallet->balance;
+            $balanceAfter = $balanceBefore + $amount;
+
+            $tx = WalletTransaction::create([
+                'wallet_id' => $wallet->id,
+                'transaction_type' => 'credit',
+                'amount' => $amount,
+                'balance_before' => $balanceBefore,
+                'balance_after' => $balanceAfter,
+                'payment_method' => $paymentMethod,
+                'external_reference' => $externalRef,
+                'description' => $description,
+                'status' => 'completed',
+            ]);
+
+            $wallet->update([
+                'balance' => $balanceAfter,
+                'available_balance' => $balanceAfter - (float) $wallet->reserved_balance,
+                'total_received' => (float) $wallet->total_received + $amount,
+            ]);
+
+            $this->log('Wallet credited', [
+                'wallet_id' => $wallet->id,
+                'amount' => $amount,
+                'tx_id' => $tx->id,
+            ]);
+
+            return $tx;
+        });
     }
 
     /**
-     * Top up wallet
+     * Debit wallet (purchase, fee, etc.)
      */
-    public function topup(int $userId, float $amount, string $paymentMethod): ?array
+    public function debit(
+        int $userId,
+        float $amount,
+        string $description = '',
+        ?string $externalRef = null
+    ): WalletTransaction {
+        if ($amount <= 0) {
+            $this->throwIfErrors(['amount' => 'Amount must be positive']);
+        }
+
+        $wallet = $this->getWallet($userId);
+
+        if ((float) $wallet->available_balance < $amount) {
+            $this->throwIfErrors(['balance' => 'Insufficient funds']);
+        }
+
+        return BaseModel::transaction(function () use ($wallet, $amount, $description, $externalRef) {
+            $balanceBefore = (float) $wallet->balance;
+            $balanceAfter = $balanceBefore - $amount;
+
+            $tx = WalletTransaction::create([
+                'wallet_id' => $wallet->id,
+                'transaction_type' => 'debit',
+                'amount' => $amount,
+                'balance_before' => $balanceBefore,
+                'balance_after' => $balanceAfter,
+                'payment_method' => 'wallet',
+                'external_reference' => $externalRef,
+                'description' => $description,
+                'status' => 'completed',
+            ]);
+
+            $wallet->update([
+                'balance' => $balanceAfter,
+                'available_balance' => $balanceAfter - (float) $wallet->reserved_balance,
+                'total_spent' => (float) $wallet->total_spent + $amount,
+            ]);
+
+            $this->log('Wallet debited', [
+                'wallet_id' => $wallet->id,
+                'amount' => $amount,
+                'tx_id' => $tx->id,
+            ]);
+
+            return $tx;
+        });
+    }
+
+    /**
+     * Reserve funds for a pending order
+     */
+    public function reserveFunds(int $userId, int $orderId, float $amount): WalletReservation
     {
         $wallet = $this->getWallet($userId);
 
+        if ((float) $wallet->available_balance < $amount) {
+            $this->throwIfErrors(['balance' => 'Insufficient funds to reserve']);
+        }
+
+        return BaseModel::transaction(function () use ($wallet, $orderId, $amount) {
+            $reservation = WalletReservation::create([
+                'wallet_id' => $wallet->id,
+                'order_id' => $orderId,
+                'amount' => $amount,
+                'reason' => 'order_payment',
+                'status' => 'reserved',
+            ]);
+
+            $wallet->update([
+                'reserved_balance' => (float) $wallet->reserved_balance + $amount,
+                'available_balance' => (float) $wallet->available_balance - $amount,
+            ]);
+
+            WalletTransaction::create([
+                'wallet_id' => $wallet->id,
+                'transaction_type' => 'reserve',
+                'amount' => $amount,
+                'balance_before' => $wallet->balance,
+                'balance_after' => $wallet->balance,
+                'description' => "Funds reserved for order #{$orderId}",
+                'status' => 'completed',
+            ]);
+
+            $this->log('Funds reserved', ['wallet_id' => $wallet->id, 'amount' => $amount, 'order_id' => $orderId]);
+            return $reservation;
+        });
+    }
+
+    /**
+     * Release previously reserved funds
+     */
+    public function releaseFunds(int $reservationId): bool
+    {
+        $reservation = WalletReservation::find($reservationId);
+        if (!$reservation || $reservation->status !== 'reserved') {
+            return false;
+        }
+
+        $wallet = Wallet::find($reservation->wallet_id);
         if (!$wallet) {
-            return null;
-        }
-
-        // TODO: Validate amount
-        // TODO: Initialize payment with external provider
-        // TODO: Create transaction record
-
-        return [
-            'transaction_id' => 1,
-            'amount' => $amount,
-            'status' => 'pending',
-        ];
-    }
-
-    /**
-     * Debit wallet (for purchases)
-     */
-    public function debit(int $userId, float $amount, string $reason = ''): bool
-    {
-        $wallet = $this->getWallet($userId);
-
-        if (!$wallet || $wallet->getAvailable() < $amount) {
             return false;
         }
 
-        // TODO: Create transaction
-        // TODO: Update wallet balance
+        return (bool) BaseModel::transaction(function () use ($wallet, $reservation) {
+            $reservation->update([
+                'status' => 'released',
+                'released_at' => date('Y-m-d H:i:s'),
+            ]);
 
-        return true;
+            $wallet->update([
+                'reserved_balance' => max(0, (float) $wallet->reserved_balance - (float) $reservation->amount),
+                'available_balance' => (float) $wallet->available_balance + (float) $reservation->amount,
+            ]);
+
+            WalletTransaction::create([
+                'wallet_id' => $wallet->id,
+                'transaction_type' => 'release',
+                'amount' => $reservation->amount,
+                'balance_before' => $wallet->balance,
+                'balance_after' => $wallet->balance,
+                'description' => 'Funds released from reservation #' . $reservation->id,
+                'status' => 'completed',
+            ]);
+
+            $this->log('Funds released', ['reservation_id' => $reservation->id]);
+            return true;
+        });
     }
 
-    /**
-     * Credit wallet
-     */
-    public function credit(int $userId, float $amount, string $reason = ''): bool
+    public function getTransactions(int $userId, int $page = 1, int $perPage = 50): array
     {
         $wallet = $this->getWallet($userId);
-
-        if (!$wallet) {
-            return false;
-        }
-
-        // TODO: Create transaction
-        // TODO: Update wallet balance
-
-        return true;
-    }
-
-    /**
-     * Reserve funds for order
-     */
-    public function reserveFunds(int $userId, float $amount): bool
-    {
-        $wallet = $this->getWallet($userId);
-
-        if (!$wallet || $wallet->getAvailable() < $amount) {
-            return false;
-        }
-
-        // TODO: Update reserved amount
-
-        return true;
-    }
-
-    /**
-     * Release reserved funds
-     */
-    public function releaseFunds(int $userId, float $amount): bool
-    {
-        // TODO: Decrease reserved amount
-
-        return true;
-    }
-
-    /**
-     * Get transaction history
-     */
-    public function getTransactions(int $userId, int $limit = 50): array
-    {
-        // TODO: Fetch transactions from database
-
-        return [];
+        return WalletTransaction::query()
+            ->where('wallet_id', $wallet->id)
+            ->orderBy('created_at', 'DESC')
+            ->paginate($page, $perPage);
     }
 }

@@ -1,0 +1,48 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * AfiaZone CLI Console
+ *
+ * Usage:
+ *   php bin/console migrate
+ *   php bin/console rollback
+ *   php bin/console seed
+ */
+
+define('BASE_PATH', dirname(__DIR__));
+
+require_once BASE_PATH . '/vendor/autoload.php';
+
+if (file_exists(BASE_PATH . '/.env')) {
+    $dotenv = \Dotenv\Dotenv::createImmutable(BASE_PATH);
+    $dotenv->safeLoad();
+}
+
+require_once BASE_PATH . '/app/helpers.php';
+
+// ── Command registry ──────────────────────────
+$commands = [
+    'migrate'  => \App\Console\MigrateCommand::class,
+    'rollback' => \App\Console\RollbackCommand::class,
+    'seed'     => \App\Console\SeedCommand::class,
+];
+
+$commandName = $argv[1] ?? null;
+
+if (!$commandName || !isset($commands[$commandName])) {
+    echo "AfiaZone Console\n";
+    echo "=================\n";
+    echo "Available commands:\n";
+    foreach ($commands as $name => $class) {
+        $cmd = new $class();
+        echo "  {$name}\t{$cmd->description}\n";
+    }
+    exit(0);
+}
+
+$command = new $commands[$commandName]();
+$exitCode = $command->handle(array_slice($argv, 2));
+exit($exitCode);

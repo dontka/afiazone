@@ -226,16 +226,29 @@ if (! function_exists('json_response')) {
 
 if (! function_exists('logger')) {
     /**
-     * Log message
+     * Get Monolog logger instance, or log a message directly
      */
-    function logger(string $message, array $context = []): void
+    function logger(?string $message = null, array $context = []): \Monolog\Logger
     {
-        $logPath = storage_path('logs/app.log');
-        $timestamp = date('Y-m-d H:i:s');
-        $contextStr = ! empty($context) ? ' | ' . json_encode($context) : '';
-        $logMessage = "[{$timestamp}] {$message}{$contextStr}\n";
+        static $instance = null;
 
-        error_log($logMessage, 3, $logPath);
+        if ($instance === null) {
+            $instance = new \Monolog\Logger('afiazone');
+            $logPath = storage_path('logs/app.log');
+            $logDir = dirname($logPath);
+            if (!is_dir($logDir)) {
+                mkdir($logDir, 0775, true);
+            }
+            $instance->pushHandler(
+                new \Monolog\Handler\RotatingFileHandler($logPath, 30, \Monolog\Level::Debug)
+            );
+        }
+
+        if ($message !== null) {
+            $instance->info($message, $context);
+        }
+
+        return $instance;
     }
 }
 

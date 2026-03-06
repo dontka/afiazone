@@ -1259,10 +1259,10 @@ CREATE INDEX idx_shipment_status_date ON shipments(status, created_at DESC);
 ### C.1.1 – Installation Laragon (ou XAMPP)
 
 - [ ] Télécharger et installer Laragon (PHP 8.1+, MySQL)
-- [ ] Configuration virtualhost `afiazone.local`
+- [ ] Configuration virtualhost `afiazone.test`
 - [ ] Configurer PHP : `upload_max_filesize`, `memory_limit`, `display_errors = on`
 - [ ] Extensions activées : PDO, cURL, OpenSSL, JSON, GD, Mbstring
-- [ ] Test : `php -v` et accès à http://afiazone.local
+- [ ] Test : `php -v` et accès à http://afiazone.test
 
 ### C.1.2 – Configuration du serveur local
 
