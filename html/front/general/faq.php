@@ -1,3 +1,7 @@
+<?php
+$pageTitle = 'FAQ - AfiaZone';
+ob_start();
+?>
 ﻿<!-- rts contact main wrapper -->
     <div class="rts-contact-main-wrapper-banner bg_image">
         <div class="container">
@@ -251,3 +255,6 @@
     </div>
 
     
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layouts/frontend.php';

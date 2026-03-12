@@ -67,6 +67,9 @@ try {
     echo "Loading schema from database/schema.sql...\n";
     $schema = file_get_contents($schemaFile);
 
+    // Disable FK checks during schema import (tables may reference each other)
+    $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+
     // Split queries and execute
     $queries = array_filter(array_map('trim', explode(';', $schema)));
     foreach ($queries as $query) {
@@ -74,6 +77,8 @@ try {
             $pdo->exec($query);
         }
     }
+
+    $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
 
     echo "\n✅ Database setup completed successfully!\n";
     echo "Database: {$dbName}\n";

@@ -560,6 +560,101 @@ afiazone/
 
 ---
 
+### 13. Module Blog & Gestion de Contenu (Phase S)
+
+**Responsabilités** :
+- Publication d'articles (santé, bien-être, actualités médicales)
+- Catégorisation & tagging d'articles
+- Commentaires imbriqués avec modération
+- SEO (meta_title, meta_description, slug)
+- Planification de publications
+- Statistiques (vues, articles populaires)
+
+**Tables clés** :
+- `blog_categories` — Catégories de blog (hiérarchiques)
+- `blog_posts` — Articles de blog
+- `blog_tags` — Tags
+- `blog_post_tags` — Pivot article↔tag
+- `blog_comments` — Commentaires (imbriqués)
+
+**Controllers/Services** :
+- `BlogController` → `BlogService`
+- `CommentService` — Gestion commentaires
+
+---
+
+### 14. Module Publicité In-App (Phase T)
+
+**Responsabilités** :
+- Gestion des campagnes publicitaires (marchands)
+- Emplacements prédéfinis (banner, sidebar, featured_product, etc.)
+- Diffusion basée sur ciblage & budget
+- Tracking impressions & clics
+- Facturation & reporting
+- Protection anti-fraude (déduplification, rate limiting)
+
+**Tables clés** :
+- `ad_campaigns` — Campagnes publicitaires
+- `ad_placements` — Emplacements (homepage_banner, sidebar, etc.)
+- `ad_campaign_placements` — Pivot campagne↔emplacement
+- `ad_impressions` — Impressions trackées
+- `ad_clicks` — Clics trackés
+
+**Controllers/Services** :
+- `AdController` → `AdService`
+- `AdTrackingService` — Impressions, clics, stats
+
+---
+
+### 15. Module API Tierces Parties (Phase U)
+
+**Responsabilités** :
+- Gestion des clients API (clés, secrets, permissions)
+- Authentification via API key / Bearer token
+- Rate limiting par client
+- Webhooks sortants (order.created, payment.completed, etc.)
+- Signature HMAC-SHA256 des webhooks
+- Documentation OpenAPI / Swagger
+- Support environnements sandbox & production
+
+**Tables clés** :
+- `api_clients` — Clients API tiers
+- `api_client_permissions` — Permissions granulaires
+- `api_webhooks` — Webhooks enregistrés
+- `api_webhook_logs` — Historique livraisons webhook
+
+**Middleware/Services** :
+- `ApiKeyMiddleware` — Validation clé API
+- `WebhookService` — Envoi & retry webhooks
+- `ApiClientService` — Gestion clients
+
+---
+
+### 16. Module Internationalisation / i18n (Phase V)
+
+**Responsabilités** :
+- Support multilingue : Français (défaut), Anglais, Swahili
+- Architecture extensible (ajouter des langues facilement)
+- Clés de traduction hiérarchiques (namespace.group.key)
+- Détection langue (URL param → Accept-Language → préférence user → défaut)
+- Fallback vers langue par défaut si traduction absente
+- Formatage localisé (dates, prix, nombres)
+- Traduction contenu dynamique (catégories, articles blog)
+- Cache des traductions (file-based)
+
+**Tables clés** :
+- `languages` — Langues supportées (fr, en, sw...)
+- `translations` — Clés de traduction
+- `user_profiles.preferred_locale` — Préférence utilisateur
+
+**Middleware/Services** :
+- `LocaleMiddleware` — Détection & application de la langue
+- `TranslationService` — Résolution des traductions
+- Helper `__('key')` — Fonction de traduction
+- Helper `__n('key', $count)` — Pluralisation
+
+---
+
 ## Flux de données
 
 ### Flux 1 : Authentification
@@ -718,7 +813,7 @@ User
 
 ## Base de données
 
-### Schéma général (35+ tables)
+### Schéma général (55+ tables)
 
 #### Bloc 1 : Authentification & Utilisateurs
 - `users` — Comptes utilisateurs
@@ -777,6 +872,30 @@ User
 - `medical_records` — Dossier médical
 - `medical_record_access` — Partage accès
 - `consultations` — Consultations médicales
+
+#### Bloc 10 : Blog & Contenu
+- `blog_categories` — Catégories de blog
+- `blog_posts` — Articles
+- `blog_tags` — Tags
+- `blog_post_tags` — Pivot article↔tag
+- `blog_comments` — Commentaires imbriqués
+
+#### Bloc 11 : Publicité
+- `ad_campaigns` — Campagnes publicitaires
+- `ad_placements` — Emplacements
+- `ad_campaign_placements` — Pivot campagne↔emplacement
+- `ad_impressions` — Impressions
+- `ad_clicks` — Clics
+
+#### Bloc 12 : API Tierces Parties
+- `api_clients` — Clients API
+- `api_client_permissions` — Permissions API
+- `api_webhooks` — Webhooks sortants
+- `api_webhook_logs` — Historique webhook
+
+#### Bloc 13 : Internationalisation
+- `languages` — Langues supportées
+- `translations` — Clés de traduction
 
 ### Caractéristiques BDD
 

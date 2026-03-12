@@ -14,10 +14,21 @@ class AuthMiddleware extends Middleware
         $token = $this->getBearerToken();
 
         if (!$token) {
+            // For admin routes, check cookie-based JWT
+            $token = $_COOKIE['auth_token'] ?? null;
+        }
+
+        if (!$token) {
             $this->abort(['error' => 'Missing authorization token'], 401);
         }
 
         $authService = new AuthService();
+
+        // Check if token has been blacklisted (logout)
+        if ($authService->isTokenBlacklisted($token)) {
+            $this->abort(['error' => 'Token has been revoked'], 401);
+        }
+
         $payload = $authService->validateToken($token);
 
         if (!$payload) {
@@ -32,6 +43,7 @@ class AuthMiddleware extends Middleware
         // Store authenticated user in global request context
         $GLOBALS['auth_user'] = $user;
         $GLOBALS['auth_payload'] = $payload;
+        $GLOBALS['auth_token'] = $token;
 
         return true;
     }

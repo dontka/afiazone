@@ -1,3 +1,7 @@
+<?php
+$pageTitle = 'AfiaZone - Accueil';
+ob_start();
+?>
 <!-- rts banner area start -->
       <div class="rts-banner-area-one mb--30">
         <div class="container">
@@ -4947,3 +4951,7 @@
     <!-- rts top tranding product area end -->
 
    
+
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layouts/frontend.php';

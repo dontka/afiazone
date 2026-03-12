@@ -1,3 +1,7 @@
+<?php
+$pageTitle = 'Politique de cookies - AfiaZone';
+ob_start();
+?>
 ﻿<!-- rts navigation bar area start -->
     <div class="rts-navigation-area-breadcrumb">
         <div class="container">
@@ -87,3 +91,6 @@
 
 
     
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layouts/frontend.php';

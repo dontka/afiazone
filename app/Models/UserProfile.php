@@ -17,6 +17,7 @@ class UserProfile extends BaseModel
         'city',
         'address',
         'postal_code',
+        'preferred_locale',
         'company_name',
         'company_type',
     ];

@@ -27,7 +27,7 @@ $appUrl = rtrim($config['url'], '/');
     <?php endif; ?>
 </head>
 
-<body class="shop-main-h">
+<body class="<?php echo $bodyClass ?? 'shop-main-h'; ?>">
     <!-- Header -->
     <?php include __DIR__ . '/header.php'; ?>
     
@@ -52,6 +52,10 @@ $appUrl = rtrim($config['url'], '/');
         <?php foreach($additionalScripts as $script): ?>
             <script src="<?php echo $appUrl; ?><?php echo $script; ?>"></script>
         <?php endforeach; ?>
+    <?php endif; ?>
+
+    <?php if(isset($inlineScripts)): ?>
+        <?php echo $inlineScripts; ?>
     <?php endif; ?>
 </body>
 </html>

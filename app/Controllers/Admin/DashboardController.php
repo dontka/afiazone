@@ -11,12 +11,7 @@ class DashboardController extends BaseController
      */
     public function adminDashboard(): void
     {
-        $this->renderAdmin('back.dashboard.admin-dashboard', [
-            'pageTitle' => 'Admin Dashboard - Analytics',
-            'dashboardScripts' => [
-                '/assets/js/dashboards-analytics.js',
-            ],
-        ]);
+        require base_path('html/back/dashboard/admin-dashboard.php');
     }
 
     /**
@@ -24,12 +19,7 @@ class DashboardController extends BaseController
      */
     public function merchantDashboard(): void
     {
-        $this->renderAdmin('back.dashboard.marchant-dashboard', [
-            'pageTitle' => 'Merchant Dashboard - eCommerce',
-            'dashboardScripts' => [
-                '/assets/js/dashboards-ecommerce.js',
-            ],
-        ]);
+        require base_path('html/back/dashboard/marchant-dashboard.php');
     }
 
     /**
@@ -37,12 +27,7 @@ class DashboardController extends BaseController
      */
     public function partnerDashboard(): void
     {
-        $this->renderAdmin('back.dashboard.partener-dashboard', [
-            'pageTitle' => 'Partner Dashboard - CRM',
-            'dashboardScripts' => [
-                '/assets/js/dashboards-crm.js',
-            ],
-        ]);
+        require base_path('html/back/dashboard/partener-dashboard.php');
     }
 
     /**
@@ -50,7 +35,6 @@ class DashboardController extends BaseController
      */
     public function dashboard(): void
     {
-        // Rediriger vers le dashboard admin par défaut
         $this->adminDashboard();
     }
 }

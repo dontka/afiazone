@@ -4,7 +4,7 @@
 
 **Version** : 1.0  
 **Date** : Mars 2026  
-**Durée estimée** : 16–20 semaines  
+**Durée estimée** : 22–28 semaines  
 **Architecture** : PHP 8.1+ (MVC personnalisé) + MySQL 8 + File-based Caching
 
 ---
@@ -29,6 +29,10 @@
 16. [Phase P – Tests & QA](#phase-p--tests--qa)
 17. [Phase Q – Déploiement & Monitoring](#phase-q--déploiement--monitoring)
 18. [Phase R – Post-lancement & Optimisation](#phase-r--post-lancement--optimisation)
+19. [Phase S – Blog & Gestion de Contenu](#phase-s--blog--gestion-de-contenu)
+20. [Phase T – Publicité In-App](#phase-t--publicité-in-app)
+21. [Phase U – API Tierces Parties](#phase-u--api-tierces-parties)
+22. [Phase V – Internationalisation (i18n)](#phase-v--internationalisation-i18n)
 
 ---
 
@@ -1220,7 +1224,257 @@ CREATE TABLE insurance_subscriptions (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4;
 ```
 
-### B.2.14 – Créer les indices importants
+### B.2.14 – Tables Blog & Contenu
+
+```sql
+-- Catégories de blog
+CREATE TABLE blog_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  parent_id INT,
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  display_order INT DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (parent_id) REFERENCES blog_categories(id) ON DELETE SET NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Articles de blog
+CREATE TABLE blog_posts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  author_id BIGINT NOT NULL,
+  category_id INT,
+  title VARCHAR(512) NOT NULL,
+  slug VARCHAR(512) UNIQUE NOT NULL,
+  excerpt TEXT,
+  content LONGTEXT NOT NULL,
+  cover_image_url VARCHAR(512),
+  meta_title VARCHAR(255),
+  meta_description VARCHAR(512),
+  status ENUM('draft','pending_review','published','archived') DEFAULT 'draft',
+  is_featured BOOLEAN DEFAULT FALSE,
+  view_count BIGINT DEFAULT 0,
+  scheduled_at DATETIME,
+  published_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (category_id) REFERENCES blog_categories(id) ON DELETE SET NULL,
+  FULLTEXT INDEX ft_blog_search (title, content)
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Tags
+CREATE TABLE blog_tags (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  slug VARCHAR(100) UNIQUE NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Pivot post ↔ tag
+CREATE TABLE blog_post_tags (
+  post_id BIGINT NOT NULL,
+  tag_id INT NOT NULL,
+  PRIMARY KEY (post_id, tag_id),
+  FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (tag_id) REFERENCES blog_tags(id) ON DELETE CASCADE
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Commentaires
+CREATE TABLE blog_comments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  post_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  parent_id BIGINT,
+  content TEXT NOT NULL,
+  status ENUM('pending','approved','rejected','spam') DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (parent_id) REFERENCES blog_comments(id) ON DELETE CASCADE
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+```
+
+### B.2.15 – Tables Publicité In-App
+
+```sql
+-- Campagnes publicitaires
+CREATE TABLE ad_campaigns (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  merchant_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  campaign_type ENUM('banner','sidebar','featured_product','popup','interstitial') DEFAULT 'banner',
+  target_url VARCHAR(512),
+  image_url VARCHAR(512),
+  content_html TEXT,
+  target_category_id INT,
+  target_user_type ENUM('all','customer','merchant','deliverer') DEFAULT 'all',
+  daily_budget DECIMAL(10,2),
+  total_budget DECIMAL(12,2),
+  spent_amount DECIMAL(12,2) DEFAULT 0,
+  cost_model ENUM('cpm','cpc','fixed') DEFAULT 'cpc',
+  cost_per_unit DECIMAL(8,4),
+  frequency_cap INT,
+  status ENUM('draft','active','paused','completed','cancelled') DEFAULT 'draft',
+  start_date DATETIME,
+  end_date DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE,
+  FOREIGN KEY (target_category_id) REFERENCES product_categories(id) ON DELETE SET NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Emplacements publicitaires
+CREATE TABLE ad_placements (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(100) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  dimensions VARCHAR(50),
+  max_ads INT DEFAULT 1,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Pivot campagne ↔ emplacement
+CREATE TABLE ad_campaign_placements (
+  campaign_id BIGINT NOT NULL,
+  placement_id INT NOT NULL,
+  PRIMARY KEY (campaign_id, placement_id),
+  FOREIGN KEY (campaign_id) REFERENCES ad_campaigns(id) ON DELETE CASCADE,
+  FOREIGN KEY (placement_id) REFERENCES ad_placements(id) ON DELETE CASCADE
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Impressions
+CREATE TABLE ad_impressions (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  campaign_id BIGINT NOT NULL,
+  placement_id INT,
+  user_id BIGINT,
+  session_id VARCHAR(255),
+  ip_address VARCHAR(45),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (campaign_id) REFERENCES ad_campaigns(id) ON DELETE CASCADE,
+  INDEX idx_campaign_id (campaign_id),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Clics
+CREATE TABLE ad_clicks (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  campaign_id BIGINT NOT NULL,
+  impression_id BIGINT,
+  placement_id INT,
+  user_id BIGINT,
+  ip_address VARCHAR(45),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (campaign_id) REFERENCES ad_campaigns(id) ON DELETE CASCADE,
+  INDEX idx_campaign_id (campaign_id),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+```
+
+### B.2.16 – Tables API Tierces Parties
+
+```sql
+-- Clients API (tiers)
+CREATE TABLE api_clients (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  merchant_id BIGINT,
+  name VARCHAR(255) NOT NULL,
+  api_key VARCHAR(255) UNIQUE NOT NULL,
+  api_secret_hash VARCHAR(255) NOT NULL,
+  environment ENUM('sandbox','production') DEFAULT 'sandbox',
+  is_active BOOLEAN DEFAULT TRUE,
+  requests_per_minute INT DEFAULT 60,
+  requests_per_day INT DEFAULT 10000,
+  allowed_ips JSON,
+  last_used_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE SET NULL,
+  INDEX idx_api_key (api_key)
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Permissions API par client
+CREATE TABLE api_client_permissions (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  api_client_id BIGINT NOT NULL,
+  permission VARCHAR(100) NOT NULL, -- ex: products.read, orders.write
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (api_client_id) REFERENCES api_clients(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_client_perm (api_client_id, permission)
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Webhooks sortants
+CREATE TABLE api_webhooks (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  api_client_id BIGINT NOT NULL,
+  url VARCHAR(512) NOT NULL,
+  secret_hash VARCHAR(255) NOT NULL,
+  events JSON NOT NULL, -- ["order.created","payment.completed",...]
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (api_client_id) REFERENCES api_clients(id) ON DELETE CASCADE
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Logs de livraison webhooks
+CREATE TABLE api_webhook_logs (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  webhook_id BIGINT NOT NULL,
+  event_type VARCHAR(100) NOT NULL,
+  payload JSON,
+  response_status_code INT,
+  response_body TEXT,
+  latency_ms INT,
+  attempt INT DEFAULT 1,
+  status ENUM('success','failed','pending') DEFAULT 'pending',
+  next_retry_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (webhook_id) REFERENCES api_webhooks(id) ON DELETE CASCADE,
+  INDEX idx_status (status),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+```
+
+### B.2.17 – Tables Internationalisation (i18n)
+
+```sql
+-- Langues supportées
+CREATE TABLE languages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(10) UNIQUE NOT NULL, -- 'fr', 'en', 'sw'
+  name VARCHAR(100) NOT NULL,       -- 'Français', 'Anglais', 'Swahili'
+  native_name VARCHAR(100) NOT NULL,-- 'Français', 'English', 'Kiswahili'
+  flag_icon VARCHAR(50),
+  is_default BOOLEAN DEFAULT FALSE,
+  is_active BOOLEAN DEFAULT TRUE,
+  is_rtl BOOLEAN DEFAULT FALSE,
+  display_order INT DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_code (code)
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Traductions (clés hiérarchiques : namespace.group.item)
+CREATE TABLE translations (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  locale VARCHAR(10) NOT NULL,          -- 'fr', 'en', 'sw'
+  namespace VARCHAR(100) NOT NULL DEFAULT 'general',
+  group_key VARCHAR(100) NOT NULL,      -- 'auth', 'product', 'order'
+  item_key VARCHAR(255) NOT NULL,       -- 'login.title', 'add_to_cart'
+  value TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_translation (locale, namespace, group_key, item_key),
+  INDEX idx_locale (locale),
+  INDEX idx_namespace_group (namespace, group_key)
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
+
+-- Ajout préférence langue au profil utilisateur
+ALTER TABLE user_profiles ADD COLUMN preferred_locale VARCHAR(10) DEFAULT 'fr';
+```
+
+### B.2.18 – Créer les indices importants
 
 ```sql
 -- Indices de performance critiques
@@ -1346,7 +1600,7 @@ CREATE INDEX idx_shipment_status_date ON shipments(status, created_at DESC);
 APP_NAME=AfiaZone
 APP_ENV=development
 APP_DEBUG=true
-APP_URL=http://localhost:8000
+APP_URL=http://afiazone.test
 APP_KEY=your-secret-key
 
 DB_HOST=mysql
@@ -1395,7 +1649,7 @@ STRIPE_API_KEY=xxx (si applicable)
 - [ ] Endpoint POST `/api/auth/register`
   - Validation email (unique, format valide)
   - Validation password (force, confirmation)
-  - Validation phone (optionnel)
+  - Validation phone (De preférence)
   - Hash password via bcrypt
 
 - [ ] Envoi email de vérification (lien + token)
@@ -1447,7 +1701,7 @@ STRIPE_API_KEY=xxx (si applicable)
   - `merchant` – vente produits
   - `customer` – achat
   - `delivery_person` – livraison
-  - `partner` – partenaire (assureur, etc.)
+  - `partner` – partenaire (assureur, financier parainnage etc.)
 
 ### D.2.2 – Permissions
 
@@ -1521,7 +1775,7 @@ STRIPE_API_KEY=xxx (si applicable)
 - [ ] KYC approuvé → merchant peut être level 1 (verified)
 - [ ] Critères upgrade (ventes, avis, ancienneté)
 
-### E.2.4 – Document storage & scanning (optionnel)
+### E.2.4 – Document storage & scanning (très important)
 
 - [ ] Intégration avec service OCR/document scanning
 - [ ] Vérification automatique ID valide
@@ -1607,7 +1861,7 @@ STRIPE_API_KEY=xxx (si applicable)
 ### F.3.2 – Détail produit
 
 - [ ] Endpoint GET `/api/products/{slug}`
-- [ ] Toutes infos + images
+- [ ] Toutes infos: Fiches médicales certifiées : posologie, contre‑indications, statut ordonnance, provenance; photos, notices PDF, et labels réglementaires.
 - [ ] Merchant info
 - [ ] Reviews
 - [ ] Stock status
@@ -1617,6 +1871,7 @@ STRIPE_API_KEY=xxx (si applicable)
 - [ ] Endpoint GET `/api/products/search?q=xxx`
 - [ ] Full-text search MySQL (`MATCH AGAINST`)
 - [ ] Ou intégration Elasticsearch (optionnel)
+- [ ] Recherche guidée par symptômes (avec avertissements), suggestions de produits complémentaires (panier santé), et parcours ordonnance fluide UX.
 
 ### F.3.4 – Recommendations
 
@@ -1914,6 +2169,7 @@ STRIPE_API_KEY=xxx (si applicable)
 # PHASE J – Ordonnances & Dossier Médical
 
 **Durée estimée** : 2–3 semaines
+Pack pro santé : logiciel de gestion pour cliniques/pharmacies, intégration stock, facturation, et formation KYC; marketplace B2B pour hôpitaux.
 
 ## J.1 Prescription uploads
 
@@ -2129,6 +2385,7 @@ STRIPE_API_KEY=xxx (si applicable)
 - [ ] Funnels : view → cart → checkout → payment
 - [ ] Funnel drop-off analysis
 - [ ] Session duration, bounce rate
+- [ ] Analytics santé anonymisées vendables aux institutions; dashboards pour pharmacies/cliniques; alertes épidémiologiques locales.
 
 ## M.2 Business intelligence
 
@@ -2548,6 +2805,10 @@ STRIPE_API_KEY=xxx (si applicable)
 | P     | 70% code coverage, e2e tests green                         |
 | Q     | Production environment stable, CI/CD automated             |
 | R     | <2% error rate, uptime >99.5%, user retention >60%         |
+| S     | Blog opérationnel, articles publiés, SEO actif              |
+| T     | Publicités diffusées, impressions/clics trackés, ROI mesuré  |
+| U     | API tierces documentée, clés API distribuées, webhooks actifs |
+| V     | 3 langues actives (FR, EN, SW), traductions complètes >95%   |
 
 ---
 
@@ -2572,6 +2833,281 @@ STRIPE_API_KEY=xxx (si applicable)
 3. **Semaine 9–12** : Wallet, prescriptions, delivery
 4. **Semaine 13–16** : Payment integration, admin, tests
 5. **Semaine 17–20** : Security hardening, optimizations, launch
+6. **Semaine 21–24** : Blog, publicité in-app, API tierces parties
+7. **Semaine 25–28** : Internationalisation (i18n), polish final, lancement complet
+
+---
+
+---
+
+# PHASE S – Blog & Gestion de Contenu
+
+**Durée estimée** : 1–2 semaines
+
+## S.1 Système de Blog
+
+### S.1.1 – Structure du blog
+
+- [ ] Créer tables `blog_categories`, `blog_posts`, `blog_tags`, `blog_post_tags`, `blog_comments`
+- [ ] Support des catégories hiérarchiques (parent_id)
+- [ ] Tags multiples par article (many-to-many)
+- [ ] Statut de publication : draft → pending_review → published → archived
+
+### S.1.2 – CRUD Articles (Admin/Modérateur)
+
+- [ ] Endpoint POST `/api/blog/posts` (créer article)
+- [ ] Endpoint PUT `/api/blog/posts/{slug}` (modifier)
+- [ ] Endpoint DELETE `/api/blog/posts/{id}` (supprimer / archiver)
+- [ ] Endpoint GET `/api/admin/blog/posts` (liste admin avec filtres status)
+- [ ] Support contenu riche (HTML sanitisé) avec images intégrées
+- [ ] Upload images d'article (cover image + images dans le contenu)
+- [ ] SEO : meta_title, meta_description, slug auto-généré
+- [ ] Planification de publication (scheduled_at)
+
+### S.1.3 – Affichage public
+
+- [ ] Endpoint GET `/api/blog/posts` (liste publique, paginée)
+- [ ] Endpoint GET `/api/blog/posts/{slug}` (détail article)
+- [ ] Endpoint GET `/api/blog/categories` (liste catégories)
+- [ ] Endpoint GET `/api/blog/categories/{slug}/posts` (articles par catégorie)
+- [ ] Endpoint GET `/api/blog/tags/{slug}/posts` (articles par tag)
+- [ ] Filtres : catégorie, tag, date, popularité
+- [ ] Tri : newest, most_viewed, most_commented
+- [ ] Recherche fulltext dans titre + contenu
+
+### S.1.4 – Commentaires
+
+- [ ] Endpoint POST `/api/blog/posts/{id}/comments` (ajouter commentaire)
+- [ ] Endpoint GET `/api/blog/posts/{id}/comments` (liste commentaires)
+- [ ] Endpoint DELETE `/api/blog/comments/{id}` (supprimer)
+- [ ] Modération des commentaires (status : pending → approved / rejected)
+- [ ] Support commentaires imbriqués (parent_id)
+- [ ] Rate limiting : max 5 commentaires/minute par utilisateur
+- [ ] Notification auteur quand nouveau commentaire
+
+### S.1.5 – Statistiques du blog
+
+- [ ] Compteur de vues par article (view_count)
+- [ ] Articles les plus populaires
+- [ ] Intégration avec module Analytics (analytics_events)
+
+---
+
+# PHASE T – Publicité In-App
+
+**Durée estimée** : 1–2 semaines
+
+## T.1 Gestion des campagnes publicitaires
+
+### T.1.1 – Création de campagnes
+
+- [ ] Créer tables `ad_campaigns`, `ad_placements`, `ad_impressions`, `ad_clicks`
+- [ ] Endpoint POST `/api/ads/campaigns` (créer campagne)
+- [ ] Endpoint PUT `/api/ads/campaigns/{id}` (modifier)
+- [ ] Endpoint GET `/api/admin/ads/campaigns` (liste admin)
+- [ ] Types de campagne : banner, sidebar, featured_product, popup, interstitial
+- [ ] Ciblage : par catégorie de produit, localisation, type d'utilisateur
+- [ ] Budget : daily_budget, total_budget
+- [ ] Planification : start_date → end_date
+- [ ] Statut : draft → active → paused → completed → cancelled
+
+### T.1.2 – Emplacements publicitaires
+
+- [ ] Endpoint GET `/api/ads/placements` (emplacements disponibles)
+- [ ] Emplacements prédéfinis :
+  - `homepage_banner` — Bannière page d'accueil
+  - `category_sidebar` — Sidebar catégorie
+  - `product_detail_related` — Suggestion produit sponsorisé
+  - `search_results_top` — Haut des résultats de recherche
+  - `checkout_suggestion` — Suggestion au checkout
+  - `blog_inline` — Dans les articles de blog
+- [ ] Pricing par emplacement (CPM, CPC, forfait)
+
+### T.1.3 – Diffusion des publicités
+
+- [ ] Endpoint GET `/api/ads/serve?placement=xxx` (servir une publicité)
+- [ ] Sélection basée sur : budget restant, ciblage, priorité, randomisation
+- [ ] Rotation des publicités (éviter fatigue publicitaire)
+- [ ] Fréquence max par utilisateur (frequency_cap)
+- [ ] Vérification budget avant affichage
+
+### T.1.4 – Tracking impressions & clics
+
+- [ ] Endpoint POST `/api/ads/impressions` (enregistrer impression)
+- [ ] Endpoint POST `/api/ads/clicks/{id}` (enregistrer clic + redirect)
+- [ ] Tracking côté serveur (éviter ad-blockers)
+- [ ] Compteur en temps réel (daily_impressions, daily_clicks)
+- [ ] Protection anti-fraude : déduplification par session, rate limiting
+
+### T.1.5 – Reporting & facturation
+
+- [ ] Endpoint GET `/api/ads/campaigns/{id}/stats` (statistiques campagne)
+- [ ] Métriques : impressions, clics, CTR, coût total, conversions
+- [ ] Facturation automatique marchands (débit wallet ou facturation)
+- [ ] Rapport mensuel pour annonceurs
+- [ ] Dashboard admin : revenus publicitaires, top campagnes
+
+---
+
+# PHASE U – API Tierces Parties
+
+**Durée estimée** : 1–2 semaines
+
+## U.1 Système de clés API
+
+### U.1.1 – Gestion des clients API
+
+- [ ] Créer tables `api_clients`, `api_client_permissions`, `api_webhooks`, `api_webhook_logs`
+- [ ] Endpoint POST `/api/admin/api-clients` (créer client API)
+- [ ] Endpoint GET `/api/admin/api-clients` (lister clients)
+- [ ] Endpoint PUT `/api/admin/api-clients/{id}` (modifier)
+- [ ] Endpoint DELETE `/api/admin/api-clients/{id}` (révoquer)
+- [ ] Génération de paire api_key + api_secret (hash sécurisé)
+- [ ] Support environnements : sandbox (test) et production
+- [ ] Rate limiting par client (requests_per_minute, requests_per_day)
+
+### U.1.2 – Permissions API
+
+- [ ] Permissions granulaires par client :
+  - `products.read` — Lecture catalogue
+  - `products.write` — Gestion catalogue
+  - `orders.read` — Consultation commandes
+  - `orders.write` — Création/modification commandes
+  - `inventory.read` — Consultation stock
+  - `inventory.write` — Mise à jour stock
+  - `users.read` — Consultation profils (limité)
+  - `analytics.read` — Accès données analytics
+- [ ] Scoping par merchant_id (un client API peut être limité à un marchand)
+
+### U.1.3 – Authentification API
+
+- [ ] Authentication via header `X-API-Key` + `X-API-Secret`
+- [ ] Ou via Bearer token (JWT signé avec api_secret)
+- [ ] Middleware dédié `ApiKeyMiddleware`
+- [ ] Logging de toutes les requêtes API dans `api_logs`
+- [ ] Réponse 401 si clé invalide, 429 si rate limit atteint
+
+## U.2 Webhooks sortants
+
+### U.2.1 – Configuration webhooks
+
+- [ ] Endpoint POST `/api/api-clients/{id}/webhooks` (enregistrer webhook)
+- [ ] Événements supportés :
+  - `order.created`, `order.updated`, `order.cancelled`, `order.delivered`
+  - `payment.completed`, `payment.failed`, `payment.refunded`
+  - `product.created`, `product.updated`, `product.out_of_stock`
+  - `inventory.low_stock`, `inventory.updated`
+  - `kyc.approved`, `kyc.rejected`
+- [ ] URL de callback + secret partagé pour signature
+- [ ] Retry policy : 3 tentatives avec backoff exponentiel (1min, 5min, 30min)
+
+### U.2.2 – Envoi & logging webhooks
+
+- [ ] Signature HMAC-SHA256 du payload avec le secret partagé
+- [ ] Header `X-Webhook-Signature` pour vérification côté client
+- [ ] Logging dans `api_webhook_logs` (payload, response, status_code, latency)
+- [ ] Dashboard admin : taux de succès webhooks, erreurs fréquentes
+- [ ] Endpoint GET `/api/api-clients/{id}/webhooks/logs` (historique livraisons)
+
+## U.3 Documentation API
+
+### U.3.1 – Documentation OpenAPI
+
+- [ ] Générer spec OpenAPI 3.0 (Swagger)
+- [ ] Portail développeur public avec documentation interactive
+- [ ] Exemples de requêtes/réponses pour chaque endpoint
+- [ ] Guide d'intégration (getting started)
+- [ ] Sandbox pour tests (environnement isolé)
+
+---
+
+# PHASE V – Internationalisation (i18n)
+
+**Durée estimée** : 1–2 semaines
+
+## V.1 Infrastructure multilingue
+
+### V.1.1 – Structure de base
+
+- [ ] Créer tables `languages`, `translations`
+- [ ] Langues initiales :
+  - **Français** (fr) — Langue par défaut
+  - **Anglais** (en)
+  - **Swahili** (sw)
+- [ ] Architecture extensible pour ajouter facilement de nouvelles langues
+- [ ] Ajouter colonne `preferred_locale` à `user_profiles`
+- [ ] Détection automatique de la langue :
+  1. Paramètre URL (`?lang=en`)
+  2. Header HTTP `Accept-Language`
+  3. Préférence utilisateur (si connecté)
+  4. Langue par défaut (fr)
+
+### V.1.2 – Système de traduction
+
+- [ ] Clés de traduction hiérarchiques (namespace.group.key)
+  - Exemple : `auth.login.title`, `product.detail.add_to_cart`
+- [ ] Endpoint GET `/api/translations/{locale}` (récupérer traductions)
+- [ ] Endpoint GET `/api/translations/{locale}/{namespace}` (par namespace)
+- [ ] Support des placeholders : `Bonjour {name}` → `Hello {name}`
+- [ ] Support des pluriels : `{count} produit|{count} produits`
+- [ ] Fallback : si traduction absente → langue par défaut (fr)
+- [ ] Cache des traductions (file-based) avec invalidation
+
+### V.1.3 – Helper i18n côté serveur
+
+- [ ] Fonction helper `__('auth.login.title')` pour traduction
+- [ ] Fonction helper `__n('product.count', $count)` pour pluriels
+- [ ] Middleware `LocaleMiddleware` pour détecter et appliquer la langue
+- [ ] Header de réponse `Content-Language` automatique
+- [ ] Locale dans les réponses JSON API
+
+## V.2 Traduction du contenu
+
+### V.2.1 – Contenu statique (UI)
+
+- [ ] Traduction de tous les labels, messages, boutons de l'interface
+- [ ] Messages d'erreur traduits (validation, auth, paiement)
+- [ ] Emails transactionnels traduits (confirmation, reset password, etc.)
+- [ ] Notifications traduites
+- [ ] Pages légales (CGU, politique de confidentialité) en 3 langues
+
+### V.2.2 – Contenu dynamique
+
+- [ ] Traduction des catégories de produits
+- [ ] Traduction des descriptions produits (optionnel, si marchand fournit)
+- [ ] Traduction des articles de blog
+- [ ] Support `translation_key` sur tables à contenu traduisible :
+  - `product_categories.name` → clé dans `translations`
+  - `blog_categories.name` → clé dans `translations`
+
+### V.2.3 – Administration des traductions
+
+- [ ] Endpoint POST `/api/admin/translations` (ajouter traduction)
+- [ ] Endpoint PUT `/api/admin/translations/{id}` (modifier)
+- [ ] Endpoint DELETE `/api/admin/translations/{id}` (supprimer)
+- [ ] Endpoint GET `/api/admin/translations/missing/{locale}` (traductions manquantes)
+- [ ] Import/export traductions en format JSON ou CSV
+- [ ] Interface admin pour gestion des traductions (liste, recherche, édition inline)
+- [ ] Progression de traduction par langue (% complété)
+
+### V.2.4 – Gestion des langues
+
+- [ ] Endpoint POST `/api/admin/languages` (ajouter une nouvelle langue)
+- [ ] Endpoint PUT `/api/admin/languages/{code}` (activer/désactiver)
+- [ ] Endpoint GET `/api/languages` (langues disponibles, public)
+- [ ] Possibilité de désactiver temporairement une langue incomplète
+- [ ] Associer un drapeau/icône à chaque langue
+
+## V.3 Formatage localisé
+
+### V.3.1 – Formats régionaux
+
+- [ ] Formatage des prix selon la locale (devise, séparateurs)
+  - FR : `1 234,56 $` | EN : `$1,234.56` | SW : `$1,234.56`
+- [ ] Formatage des dates selon la locale
+  - FR : `12 mars 2026` | EN : `March 12, 2026` | SW : `12 Machi 2026`
+- [ ] Formatage des nombres
+- [ ] Support RTL (right-to-left) préparé pour langues futures (arabe, etc.)
 
 ---
 

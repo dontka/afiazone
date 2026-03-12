@@ -3,100 +3,153 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Services\AuthService;
 
 class AuthController extends BaseController
 {
-    /**
-     * Affiche la page de connexion admin
-     */
+    private AuthService $authService;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->authService = new AuthService();
+    }
+
+    // ── Show pages ────────────────────────────────
+
     public function showLogin(): void
     {
-        $this->renderAuth('back.auth.admin-login', [
-            'pageTitle' => 'Admin Login - AfiaZone',
-        ]);
+        require base_path('html/back/auth/admin-login.php');
     }
 
-    /**
-     * Traite la soumission du formulaire de connexion
-     * TODO: Implémenter la logique d'authentification
-     */
-    public function login(): void
-    {
-        // Récupérer les données POST
-        $email = $_POST['email'] ?? '';
-        $password = $_POST['password'] ?? '';
-
-        // TODO: Valider les credentials contre la base de données
-        // TODO: Créer une session/JWT token
-        // TODO: Rediriger vers le dashboard si succès
-
-        // Pour l'instant, afficher un message d'erreur
-        http_response_code(401);
-        echo json_encode(['error' => 'Not implemented yet']);
-    }
-
-    /**
-     * Affiche la page d'inscription admin
-     */
     public function showRegister(): void
     {
-        $this->renderAuth('back.auth.admin-register', [
-            'pageTitle' => 'Admin Register - AfiaZone',
-        ]);
+        require base_path('html/back/auth/admin-register.php');
     }
 
-    /**
-     * Traite la soumission du formulaire d'inscription
-     * TODO: Implémenter la logique d'inscription
-     */
-    public function register(): void
-    {
-        // TODO: Valider les données
-        // TODO: Créer l'utilisateur en base de données
-        // TODO: Rediriger vers le dashboard
-        http_response_code(501);
-        echo json_encode(['error' => 'Not implemented yet']);
-    }
-
-    /**
-     * Affiche la page de récupération de mot de passe
-     */
     public function showForgotPassword(): void
     {
-        $this->renderAuth('back.auth.admin-forgot-password', [
-            'pageTitle' => 'Forgot Password - AfiaZone',
-        ]);
+        require base_path('html/back/auth/admin-forgot-password.php');
     }
 
-    /**
-     * Affiche la page de réinitialisation de mot de passe
-     */
     public function showResetPassword(): void
     {
-        $this->renderAuth('back.auth.admin-reset-password', [
-            'pageTitle' => 'Reset Password - AfiaZone',
-        ]);
+        require base_path('html/back/auth/admin-reset-password.php');
     }
 
-    /**
-     * Affiche la page de vérification 2FA
-     */
     public function show2FA(): void
     {
-        $this->renderAuth('back.auth.admin-2fa', [
-            'pageTitle' => '2FA Verification - AfiaZone',
-        ]);
+        require base_path('html/back/auth/admin-2fa.php');
     }
 
-    /**
-     * Déconnecte l'utilisateur
-     * TODO: Implémenter la logique de déconnexion
-     */
+    // ── Form handlers ─────────────────────────────
+
+    public function login(): void
+    {
+        $email = trim((string) ($_POST['email-username'] ?? $_POST['email'] ?? ''));
+        $password = (string) ($_POST['password'] ?? '');
+
+        if (empty($email) || empty($password)) {
+            $this->redirect('/admin/login?error=' . urlencode('Email and password are required'));
+            return;
+        }
+
+        try {
+            $result = $this->authService->login($email, $password);
+            $user = $result['user'];
+
+            // Verify admin/moderator role
+            $roles = $user['roles'] ?? [];
+            if (empty(array_intersect($roles, ['admin', 'moderator', 'super_admin']))) {
+                $this->redirect('/admin/login?error=' . urlencode('Access denied. Admin privileges required.'));
+                return;
+            }
+
+            // Set auth cookie (HttpOnly, Secure in production)
+            $secure = env('APP_ENV', 'production') !== 'local';
+            $ttl = (int) env('JWT_EXPIRATION', 3600);
+            setcookie('auth_token', $result['token'], [
+                'expires' => time() + $ttl,
+                'path' => '/',
+                'httponly' => true,
+                'secure' => $secure,
+                'samesite' => 'Lax',
+            ]);
+
+            $this->redirect('/admin/dashboard');
+        } catch (\App\Exceptions\UnauthorizedException $e) {
+            $this->redirect('/admin/login?error=' . urlencode('Invalid email or password'));
+        } catch (\App\Exceptions\ForbiddenException $e) {
+            $this->redirect('/admin/login?error=' . urlencode($e->getMessage()));
+        } catch (\App\Exceptions\ValidationException $e) {
+            $errors = implode(', ', $e->getErrors());
+            $this->redirect('/admin/login?error=' . urlencode($errors));
+        }
+    }
+
+    public function register(): void
+    {
+        $data = [
+            'email' => trim((string) ($_POST['email'] ?? '')),
+            'password' => (string) ($_POST['password'] ?? ''),
+            'first_name' => trim((string) ($_POST['first_name'] ?? '')),
+            'last_name' => trim((string) ($_POST['last_name'] ?? '')),
+        ];
+
+        try {
+            $this->authService->register($data);
+            $this->redirect('/admin/login?success=' . urlencode('Account created. Please check your email for verification.'));
+        } catch (\App\Exceptions\ValidationException $e) {
+            $errors = implode(', ', $e->getErrors());
+            $this->redirect('/admin/register?error=' . urlencode($errors));
+        }
+    }
+
+    public function forgotPassword(): void
+    {
+        $email = trim((string) ($_POST['email'] ?? ''));
+
+        if (empty($email)) {
+            $this->redirect('/admin/forgot-password?error=' . urlencode('Email is required'));
+            return;
+        }
+
+        $this->authService->requestPasswordReset($email);
+        $this->redirect('/admin/forgot-password?success=' . urlencode('If the email exists, a reset link was sent.'));
+    }
+
+    public function resetPassword(): void
+    {
+        $token = (string) ($_POST['token'] ?? '');
+        $password = (string) ($_POST['password'] ?? '');
+
+        if (empty($token) || empty($password)) {
+            $this->redirect('/admin/reset-password?error=' . urlencode('Token and password are required') . '&token=' . urlencode($token));
+            return;
+        }
+
+        $ok = $this->authService->resetPassword($token, $password);
+
+        if (!$ok) {
+            $this->redirect('/admin/reset-password?error=' . urlencode('Invalid or expired reset token') . '&token=' . urlencode($token));
+            return;
+        }
+
+        $this->redirect('/admin/login?success=' . urlencode('Password reset successfully. Please login.'));
+    }
+
     public function logout(): void
     {
-        // TODO: Détruire la session/token
-        // TODO: Rediriger vers la page de login
-        http_response_code(501);
-        echo json_encode(['error' => 'Not implemented yet']);
+        $token = $_COOKIE['auth_token'] ?? null;
+        if ($token) {
+            $this->authService->logout($token);
+            setcookie('auth_token', '', [
+                'expires' => time() - 3600,
+                'path' => '/',
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+        }
+        $this->redirect('/admin/login');
     }
 }

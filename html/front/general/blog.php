@@ -1,3 +1,7 @@
+<?php
+$pageTitle = 'Blog - AfiaZone';
+ob_start();
+?>
 ﻿<div class="rts-navigation-area-breadcrumb">
         <div class="container">
             <div class="row">
@@ -26,7 +30,7 @@
                     <!-- single blog area start -->
                     <div class="single-blog-style-card-border">
                         <a href="blog-details.php" class="thumbnail">
-                            <img src="/assets/images/blog/05.jpg" alt="blog-area">
+                            <img src="/html/front/assets/images/blog/05.jpg" alt="blog-area">
                         </a>
                         <div class="inner-content-body">
                             <div class="tag-area">
@@ -66,7 +70,7 @@
                     <!-- single blog area start -->
                     <div class="single-blog-style-card-border">
                         <a href="blog-details.php" class="thumbnail">
-                            <img src="/assets/images/blog/06.jpg" alt="blog-area">
+                            <img src="/html/front/assets/images/blog/06.jpg" alt="blog-area">
                         </a>
                         <div class="inner-content-body">
                             <div class="tag-area">
@@ -106,7 +110,7 @@
                     <!-- single blog area start -->
                     <div class="single-blog-style-card-border">
                         <a href="blog-details.php" class="thumbnail">
-                            <img src="/assets/images/blog/07.jpg" alt="blog-area">
+                            <img src="/html/front/assets/images/blog/07.jpg" alt="blog-area">
                         </a>
                         <div class="inner-content-body">
                             <div class="tag-area">
@@ -146,7 +150,7 @@
                     <!-- single blog area start -->
                     <div class="single-blog-style-card-border">
                         <a href="blog-details.php" class="thumbnail">
-                            <img src="/assets/images/blog/08.jpg" alt="blog-area">
+                            <img src="/html/front/assets/images/blog/08.jpg" alt="blog-area">
                         </a>
                         <div class="inner-content-body">
                             <div class="tag-area">
@@ -186,7 +190,7 @@
                     <!-- single blog area start -->
                     <div class="single-blog-style-card-border">
                         <a href="blog-details.php" class="thumbnail">
-                            <img src="/assets/images/blog/11.jpg" alt="blog-area">
+                            <img src="/html/front/assets/images/blog/11.jpg" alt="blog-area">
                         </a>
                         <div class="inner-content-body">
                             <div class="tag-area">
@@ -226,7 +230,7 @@
                     <!-- single blog area start -->
                     <div class="single-blog-style-card-border">
                         <a href="blog-details.php" class="thumbnail">
-                            <img src="/assets/images/blog/10.jpg" alt="blog-area">
+                            <img src="/html/front/assets/images/blog/10.jpg" alt="blog-area">
                         </a>
                         <div class="inner-content-body">
                             <div class="tag-area">
@@ -266,7 +270,7 @@
                     <!-- single blog area start -->
                     <div class="single-blog-style-card-border">
                         <a href="blog-details.php" class="thumbnail">
-                            <img src="/assets/images/blog/12.jpg" alt="blog-area">
+                            <img src="/html/front/assets/images/blog/12.jpg" alt="blog-area">
                         </a>
                         <div class="inner-content-body">
                             <div class="tag-area">
@@ -306,7 +310,7 @@
                     <!-- single blog area start -->
                     <div class="single-blog-style-card-border">
                         <a href="blog-details.php" class="thumbnail">
-                            <img src="/assets/images/blog/13.jpg" alt="blog-area">
+                            <img src="/html/front/assets/images/blog/13.jpg" alt="blog-area">
                         </a>
                         <div class="inner-content-body">
                             <div class="tag-area">
@@ -454,3 +458,6 @@
     </div>
 
     
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layouts/frontend.php';

@@ -32,8 +32,9 @@ class UserRepository extends BaseRepository
 
     public function searchByName(string $name, int $limit = 20): array
     {
+        $pattern = '%' . $name . '%';
         return $this->query()
-            ->where('first_name', 'LIKE', "%{$name}%")
+            ->where('first_name', 'LIKE', $pattern)
             ->limit($limit)
             ->get();
     }

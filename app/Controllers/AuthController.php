@@ -16,6 +16,16 @@ class AuthController extends BaseController
         $this->authService = new AuthService();
     }
 
+    public function showLogin(): void
+    {
+        require base_path('html/front/auth/login.php');
+    }
+
+    public function showRegister(): void
+    {
+        require base_path('html/front/auth/register.php');
+    }
+
     public function register(): void
     {
         $result = $this->authService->register($this->getData());
@@ -46,7 +56,12 @@ class AuthController extends BaseController
 
     public function logout(): void
     {
-        // Stateless JWT — client simply discards the token
+        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        $token = '';
+        if (preg_match('/Bearer\s+(.+)/', $header, $m)) {
+            $token = $m[1];
+        }
+        $this->authService->logout($token);
         $this->jsonResponse(['message' => 'Logout successful']);
     }
 

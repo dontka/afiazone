@@ -16,11 +16,7 @@ class HealthController extends BaseController
      */
     public function welcome(): void
     {
-        $this->render('front.general.index', [
-            'pageTitle' => 'AfiaZone - Medical Marketplace',
-            'additionalStyles' => [],
-            'additionalScripts' => [],
-        ]);
+        require base_path('html/front/general/index.php');
     }
 
     /**

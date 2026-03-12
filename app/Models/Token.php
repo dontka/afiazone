@@ -37,6 +37,15 @@ class Token extends BaseModel
         return $this->update(['is_used' => true]);
     }
 
+    public static function findByPlainToken(string $plainToken): ?self
+    {
+        $hash = hash('sha256', $plainToken);
+        return self::query()
+            ->where('token_hash', $hash)
+            ->where('is_used', false)
+            ->first();
+    }
+
     public static function findByHash(string $hash): ?self
     {
         return self::query()
@@ -45,10 +54,10 @@ class Token extends BaseModel
             ->first();
     }
 
-    public static function createForUser(int $userId, string $type, int $expiresInSeconds = 3600): self
+    public static function createForUser(int $userId, string $type, int $expiresInSeconds = 3600): array
     {
         $tokenValue = bin2hex(random_bytes(32));
-        return self::create([
+        $token = self::create([
             'user_id' => $userId,
             'token_type' => $type,
             'token_hash' => hash('sha256', $tokenValue),
@@ -56,5 +65,10 @@ class Token extends BaseModel
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null,
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
         ]);
+
+        return [
+            'token' => $token,
+            'plain' => $tokenValue,
+        ];
     }
 }

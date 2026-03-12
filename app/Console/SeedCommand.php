@@ -13,7 +13,15 @@ class SeedCommand extends Command
     {
         $this->info('Seeding database...');
 
-        // TODO: Implement seeder runner
+        $seeders = [
+            \Database\Seeders\RolesPermissionsSeeder::class,
+        ];
+
+        foreach ($seeders as $seederClass) {
+            $name = basename(str_replace('\\', '/', $seederClass));
+            $this->info("Running {$name}...");
+            (new $seederClass())->run();
+        }
 
         $this->success('Database seeded!');
         return 0;

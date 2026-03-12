@@ -2,9 +2,11 @@
 // Get APP_URL from config
 $config = require __DIR__ . '/../../../config/app.php';
 $appUrl = rtrim($config['url'], '/');
-$pageTitle = $data['pageTitle'] ?? 'Admin - AfiaZone';
-$additionalStyles = $data['additionalStyles'] ?? [];
-$additionalScripts = $data['additionalScripts'] ?? [];
+$pageTitle = $pageTitle ?? 'Admin - AfiaZone';
+$vendorStyles = $vendorStyles ?? [];
+$pageStyles = $pageStyles ?? [];
+$vendorScripts = $vendorScripts ?? [];
+$additionalScripts = $additionalScripts ?? [];
 ?><!DOCTYPE html>
 
 <html
@@ -58,6 +60,14 @@ $additionalScripts = $data['additionalScripts'] ?? [];
     <link rel="stylesheet" href="/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css" />
     <link rel="stylesheet" href="/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css" />
     <link rel="stylesheet" href="/assets/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css" />
+
+    <?php foreach ($vendorStyles as $style): ?>
+        <link rel="stylesheet" href="<?php echo $style; ?>" />
+    <?php endforeach; ?>
+
+    <?php foreach ($pageStyles as $style): ?>
+        <link rel="stylesheet" href="<?php echo $style; ?>" />
+    <?php endforeach; ?>
 
     <!-- Helpers -->
     <script src="/assets/vendor/js/helpers.js"></script>
@@ -124,14 +134,16 @@ $additionalScripts = $data['additionalScripts'] ?? [];
     <script src="/assets/vendor/libs/apex-charts/apexcharts.js"></script>
     <script src="/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script>
 
+    <?php foreach ($vendorScripts as $script): ?>
+        <script src="<?php echo $script; ?>"></script>
+    <?php endforeach; ?>
+
     <!-- Main JS -->
     <script src="/assets/js/main.js"></script>
 
-    <!-- Additional Scripts -->
-    <?php if(isset($additionalScripts)): ?>
-        <?php foreach($additionalScripts as $script): ?>
-            <script src="<?php echo $appUrl; ?><?php echo $script; ?>"></script>
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <!-- Page JS -->
+    <?php foreach ($additionalScripts as $script): ?>
+        <script src="<?php echo $script; ?>"></script>
+    <?php endforeach; ?>
   </body>
 </html>

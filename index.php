@@ -51,6 +51,13 @@ foreach ($globalMiddleware as $mw) {
 // ── Routing ───────────────────────────────────
 $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $requestPath = rtrim(str_replace('/index.php', '', $requestPath), '/') ?: '/';
+
+// Strip base path when running in a subdirectory (e.g. /afiazone)
+$scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+if ($scriptDir !== '' && str_starts_with($requestPath, $scriptDir)) {
+    $requestPath = substr($requestPath, strlen($scriptDir)) ?: '/';
+}
+
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
 // Serve static files from public/
@@ -83,10 +90,16 @@ if ($matchedRoute === null) {
 
 // ── Route middleware ──────────────────────────
 $middlewareNames = $matchedRoute['middleware'] ?? [];
-foreach ($middlewareNames as $name) {
+foreach ($middlewareNames as $entry) {
+    // Support format "name:param1,param2" e.g. "rbac:admin,moderator"
+    $parts = explode(':', $entry, 2);
+    $name = $parts[0];
+    $params = isset($parts[1]) ? explode(',', $parts[1]) : [];
+
     $class = 'App\\Middleware\\' . ucfirst($name) . 'Middleware';
     if (class_exists($class)) {
-        (new $class())->handle();
+        $mw = !empty($params) ? new $class($params) : new $class();
+        $mw->handle();
     }
 }
 

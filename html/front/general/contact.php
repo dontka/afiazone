@@ -1,3 +1,7 @@
+<?php
+$pageTitle = 'Contact - AfiaZone';
+ob_start();
+?>
 ﻿<!-- rts contact main wrapper -->
     <div class="rts-contact-main-wrapper-banner bg_image">
         <div class="container">
@@ -94,7 +98,7 @@
                             </div>
                             <div class="col-lg-5 mt_md--30 mt_sm--30">
                                 <div class="thumbnail-area">
-                                    <img src="/assets/images/contact/02.jpg" alt="contact_form">
+                                    <img src="/html/front/assets/images/contact/02.jpg" alt="contact_form">
                                 </div>
                             </div>
                         </div>
@@ -200,3 +204,6 @@
     </div>
 
     
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layouts/frontend.php';

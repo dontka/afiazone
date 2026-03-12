@@ -212,6 +212,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   city VARCHAR(100),
   address VARCHAR(512),
   postal_code VARCHAR(20),
+  preferred_locale VARCHAR(10) DEFAULT 'fr',
   company_name VARCHAR(255),
   company_type VARCHAR(100),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -983,6 +984,267 @@ CREATE TABLE IF NOT EXISTS insurance_subscriptions (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ===================================================================
+-- BLOG & CONTENT MANAGEMENT
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS blog_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  parent_id INT,
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  display_order INT DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (parent_id) REFERENCES blog_categories(id) ON DELETE SET NULL,
+  INDEX idx_slug (slug),
+  INDEX idx_is_active (is_active)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  author_id BIGINT NOT NULL,
+  category_id INT,
+  title VARCHAR(512) NOT NULL,
+  slug VARCHAR(512) UNIQUE NOT NULL,
+  excerpt TEXT,
+  content LONGTEXT NOT NULL,
+  cover_image_url VARCHAR(512),
+  meta_title VARCHAR(255),
+  meta_description VARCHAR(512),
+  status ENUM('draft','pending_review','published','archived') DEFAULT 'draft',
+  is_featured BOOLEAN DEFAULT FALSE,
+  view_count BIGINT DEFAULT 0,
+  scheduled_at DATETIME,
+  published_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (category_id) REFERENCES blog_categories(id) ON DELETE SET NULL,
+  INDEX idx_status (status),
+  INDEX idx_published_at (published_at),
+  INDEX idx_author_id (author_id),
+  FULLTEXT INDEX ft_blog_search (title, content)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS blog_tags (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  slug VARCHAR(100) UNIQUE NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_slug (slug)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS blog_post_tags (
+  post_id BIGINT NOT NULL,
+  tag_id INT NOT NULL,
+  PRIMARY KEY (post_id, tag_id),
+  FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (tag_id) REFERENCES blog_tags(id) ON DELETE CASCADE
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS blog_comments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  post_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  parent_id BIGINT,
+  content TEXT NOT NULL,
+  status ENUM('pending','approved','rejected','spam') DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (parent_id) REFERENCES blog_comments(id) ON DELETE CASCADE,
+  INDEX idx_post_id (post_id),
+  INDEX idx_status (status),
+  INDEX idx_parent_id (parent_id)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ===================================================================
+-- ADVERTISING (IN-APP ADS)
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS ad_campaigns (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  merchant_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  campaign_type ENUM('banner','sidebar','featured_product','popup','interstitial') DEFAULT 'banner',
+  target_url VARCHAR(512),
+  image_url VARCHAR(512),
+  content_html TEXT,
+  target_category_id INT,
+  target_location VARCHAR(100),
+  target_user_type ENUM('all','customer','merchant','deliverer') DEFAULT 'all',
+  daily_budget DECIMAL(10,2),
+  total_budget DECIMAL(12,2),
+  spent_amount DECIMAL(12,2) DEFAULT 0,
+  cost_model ENUM('cpm','cpc','fixed') DEFAULT 'cpc',
+  cost_per_unit DECIMAL(8,4),
+  frequency_cap INT,
+  status ENUM('draft','active','paused','completed','cancelled') DEFAULT 'draft',
+  start_date DATETIME,
+  end_date DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE,
+  FOREIGN KEY (target_category_id) REFERENCES product_categories(id) ON DELETE SET NULL,
+  INDEX idx_status (status),
+  INDEX idx_merchant_id (merchant_id),
+  INDEX idx_dates (start_date, end_date)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ad_placements (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(100) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  dimensions VARCHAR(50),
+  max_ads INT DEFAULT 1,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_slug (slug)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ad_campaign_placements (
+  campaign_id BIGINT NOT NULL,
+  placement_id INT NOT NULL,
+  PRIMARY KEY (campaign_id, placement_id),
+  FOREIGN KEY (campaign_id) REFERENCES ad_campaigns(id) ON DELETE CASCADE,
+  FOREIGN KEY (placement_id) REFERENCES ad_placements(id) ON DELETE CASCADE
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ad_impressions (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  campaign_id BIGINT NOT NULL,
+  placement_id INT,
+  user_id BIGINT,
+  session_id VARCHAR(255),
+  ip_address VARCHAR(45),
+  user_agent VARCHAR(512),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (campaign_id) REFERENCES ad_campaigns(id) ON DELETE CASCADE,
+  FOREIGN KEY (placement_id) REFERENCES ad_placements(id) ON DELETE SET NULL,
+  INDEX idx_campaign_id (campaign_id),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ad_clicks (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  campaign_id BIGINT NOT NULL,
+  impression_id BIGINT,
+  placement_id INT,
+  user_id BIGINT,
+  session_id VARCHAR(255),
+  ip_address VARCHAR(45),
+  user_agent VARCHAR(512),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (campaign_id) REFERENCES ad_campaigns(id) ON DELETE CASCADE,
+  FOREIGN KEY (impression_id) REFERENCES ad_impressions(id) ON DELETE SET NULL,
+  FOREIGN KEY (placement_id) REFERENCES ad_placements(id) ON DELETE SET NULL,
+  INDEX idx_campaign_id (campaign_id),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ===================================================================
+-- THIRD-PARTY API CLIENTS & WEBHOOKS
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS api_clients (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  merchant_id BIGINT,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  api_key VARCHAR(255) UNIQUE NOT NULL,
+  api_secret_hash VARCHAR(255) NOT NULL,
+  environment ENUM('sandbox','production') DEFAULT 'sandbox',
+  is_active BOOLEAN DEFAULT TRUE,
+  requests_per_minute INT DEFAULT 60,
+  requests_per_day INT DEFAULT 10000,
+  allowed_ips JSON,
+  last_used_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE SET NULL,
+  INDEX idx_api_key (api_key),
+  INDEX idx_is_active (is_active)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS api_client_permissions (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  api_client_id BIGINT NOT NULL,
+  permission VARCHAR(100) NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (api_client_id) REFERENCES api_clients(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_client_perm (api_client_id, permission)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS api_webhooks (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  api_client_id BIGINT NOT NULL,
+  url VARCHAR(512) NOT NULL,
+  secret_hash VARCHAR(255) NOT NULL,
+  events JSON NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (api_client_id) REFERENCES api_clients(id) ON DELETE CASCADE,
+  INDEX idx_api_client_id (api_client_id)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS api_webhook_logs (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  webhook_id BIGINT NOT NULL,
+  event_type VARCHAR(100) NOT NULL,
+  payload JSON,
+  response_status_code INT,
+  response_body TEXT,
+  latency_ms INT,
+  attempt INT DEFAULT 1,
+  status ENUM('success','failed','pending') DEFAULT 'pending',
+  next_retry_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (webhook_id) REFERENCES api_webhooks(id) ON DELETE CASCADE,
+  INDEX idx_webhook_id (webhook_id),
+  INDEX idx_status (status),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ===================================================================
+-- INTERNATIONALIZATION (i18n)
+-- ===================================================================
+
+CREATE TABLE IF NOT EXISTS languages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(10) UNIQUE NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  native_name VARCHAR(100) NOT NULL,
+  flag_icon VARCHAR(50),
+  is_default BOOLEAN DEFAULT FALSE,
+  is_active BOOLEAN DEFAULT TRUE,
+  is_rtl BOOLEAN DEFAULT FALSE,
+  display_order INT DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_code (code),
+  INDEX idx_is_active (is_active)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS translations (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  locale VARCHAR(10) NOT NULL,
+  namespace VARCHAR(100) NOT NULL DEFAULT 'general',
+  group_key VARCHAR(100) NOT NULL,
+  item_key VARCHAR(255) NOT NULL,
+  value TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_translation (locale, namespace, group_key, item_key),
+  INDEX idx_locale (locale),
+  INDEX idx_namespace_group (namespace, group_key)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ===================================================================
 -- Default Roles
 -- ===================================================================
 
@@ -1071,3 +1333,63 @@ INSERT INTO product_categories (name, slug, description, is_active) VALUES
 ('Soins & Pansements', 'soins-pansements', 'Produits de soin et pansements', TRUE),
 ('Équipement Médical', 'equipement-medical', 'Équipement et appareils médicaux', TRUE)
 ON DUPLICATE KEY UPDATE slug=slug;
+
+-- ===================================================================
+-- Default Languages
+-- ===================================================================
+
+INSERT INTO languages (code, name, native_name, flag_icon, is_default, is_active, is_rtl, display_order) VALUES
+('fr', 'Français', 'Français', 'fi-fr', TRUE, TRUE, FALSE, 1),
+('en', 'Anglais', 'English', 'fi-gb', FALSE, TRUE, FALSE, 2),
+('sw', 'Swahili', 'Kiswahili', 'fi-tz', FALSE, TRUE, FALSE, 3)
+ON DUPLICATE KEY UPDATE code=code;
+
+-- ===================================================================
+-- Default Ad Placements
+-- ===================================================================
+
+INSERT INTO ad_placements (slug, name, description, dimensions, max_ads, is_active) VALUES
+('homepage_banner', 'Bannière page d''accueil', 'Grande bannière en haut de la page d''accueil', '1200x400', 1, TRUE),
+('category_sidebar', 'Sidebar catégorie', 'Publicité dans la sidebar des pages catégorie', '300x250', 2, TRUE),
+('product_detail_related', 'Produit sponsorisé', 'Suggestion de produit sponsorisé sur la page détail', '300x250', 1, TRUE),
+('search_results_top', 'Haut des résultats', 'Publicité en haut des résultats de recherche', '728x90', 1, TRUE),
+('checkout_suggestion', 'Suggestion checkout', 'Suggestion de produit au moment du checkout', '300x250', 1, TRUE),
+('blog_inline', 'Dans les articles', 'Publicité intégrée dans les articles de blog', '728x90', 1, TRUE)
+ON DUPLICATE KEY UPDATE slug=slug;
+
+-- ===================================================================
+-- Default Blog Categories
+-- ===================================================================
+
+INSERT INTO blog_categories (name, slug, description, is_active) VALUES
+('Santé & Bien-être', 'sante-bien-etre', 'Articles sur la santé générale et le bien-être', TRUE),
+('Actualités Médicales', 'actualites-medicales', 'Dernières nouvelles du monde médical', TRUE),
+('Conseils Pharmacie', 'conseils-pharmacie', 'Conseils et astuces pharmaceutiques', TRUE),
+('Nutrition', 'nutrition', 'Articles sur la nutrition et l''alimentation', TRUE),
+('Prévention', 'prevention', 'Prévention des maladies et hygiène de vie', TRUE)
+ON DUPLICATE KEY UPDATE slug=slug;
+
+-- ===================================================================
+-- Additional Permissions for new modules
+-- ===================================================================
+
+INSERT INTO permissions (name, description) VALUES
+('manage_blog', 'Create, edit, delete blog posts'),
+('moderate_comments', 'Moderate blog comments'),
+('manage_ads', 'Manage advertising campaigns'),
+('manage_api_clients', 'Manage third-party API clients'),
+('manage_translations', 'Manage translations and languages'),
+('manage_languages', 'Add/remove supported languages')
+ON DUPLICATE KEY UPDATE name=name;
+
+-- Blog permissions for moderator
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p
+WHERE r.name = 'moderator' AND p.name IN ('manage_blog','moderate_comments')
+ON DUPLICATE KEY UPDATE role_id=role_id;
+
+-- Ads permissions for merchant
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p
+WHERE r.name = 'merchant' AND p.name IN ('manage_ads')
+ON DUPLICATE KEY UPDATE role_id=role_id;

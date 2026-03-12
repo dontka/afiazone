@@ -1,10 +1,14 @@
+<?php
+$pageTitle = 'Page non trouvée - AfiaZone';
+ob_start();
+?>
 ﻿<div class="error-area-main-wrapper rts-section-gap2">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="error-main-wrapper">
                         <div class="thumbnail">
-                            <img src="/assets/images/contact/01.png" alt="error">
+                            <img src="/html/front/assets/images/contact/01.png" alt="error">
                         </div>
                         <div class="content-main">
                             <h2 class="title">This Page Can’t Be Found</h2>
@@ -106,3 +110,6 @@
     </div>
 
     
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layouts/frontend.php';

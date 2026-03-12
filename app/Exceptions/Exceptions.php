@@ -27,3 +27,55 @@ class HttpException extends Exception
         return $this->statusCode;
     }
 }
+
+/**
+ * 400 – Validation errors
+ */
+class ValidationException extends HttpException
+{
+    private array $errors;
+
+    public function __construct(string $message = 'Validation failed', array $errors = [], ?Exception $previous = null)
+    {
+        $this->errors = $errors;
+        parent::__construct($message, 422, $previous);
+    }
+
+    public function getErrors(): array
+    {
+        return $this->errors;
+    }
+}
+
+/**
+ * 401 – Authentication failure
+ */
+class UnauthorizedException extends HttpException
+{
+    public function __construct(string $message = 'Unauthorized', ?Exception $previous = null)
+    {
+        parent::__construct($message, 401, $previous);
+    }
+}
+
+/**
+ * 403 – Insufficient permissions
+ */
+class ForbiddenException extends HttpException
+{
+    public function __construct(string $message = 'Forbidden', ?Exception $previous = null)
+    {
+        parent::__construct($message, 403, $previous);
+    }
+}
+
+/**
+ * 404 – Resource not found
+ */
+class NotFoundException extends HttpException
+{
+    public function __construct(string $message = 'Not found', ?Exception $previous = null)
+    {
+        parent::__construct($message, 404, $previous);
+    }
+}

@@ -2,9 +2,11 @@
 // Get APP_URL from config
 $config = require __DIR__ . '/../../../config/app.php';
 $appUrl = rtrim($config['url'], '/');
-$pageTitle = $data['pageTitle'] ?? 'Authentication - AfiaZone';
-$additionalStyles = $data['additionalStyles'] ?? [];
-$additionalScripts = $data['additionalScripts'] ?? [];
+$pageTitle = $pageTitle ?? 'Authentication - AfiaZone';
+$vendorStyles = $vendorStyles ?? [];
+$pageStyles = $pageStyles ?? [];
+$vendorScripts = $vendorScripts ?? [];
+$additionalScripts = $additionalScripts ?? [];
 ?><!DOCTYPE html>
 
 <html
@@ -54,12 +56,13 @@ $additionalScripts = $data['additionalScripts'] ?? [];
     <!-- Page CSS -->
     <link rel="stylesheet" href="/assets/vendor/css/pages/page-auth.css" />
 
-    <!-- Additional Styles -->
-    <?php if(isset($additionalStyles)): ?>
-        <?php foreach($additionalStyles as $style): ?>
-            <link rel="stylesheet" href="<?php echo $appUrl; ?><?php echo $style; ?>" />
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <?php foreach ($vendorStyles as $style): ?>
+        <link rel="stylesheet" href="<?php echo $style; ?>" />
+    <?php endforeach; ?>
+
+    <?php foreach ($pageStyles as $style): ?>
+        <link rel="stylesheet" href="<?php echo $style; ?>" />
+    <?php endforeach; ?>
 
     <!-- Helpers -->
     <script src="/assets/vendor/js/helpers.js"></script>
@@ -71,15 +74,7 @@ $additionalScripts = $data['additionalScripts'] ?? [];
   </head>
 
   <body>
-    <!-- Content -->
-    <div class="container-xxl">
-      <div class="authentication-wrapper authentication-basic container-p-y">
-        <div class="authentication-inner py-4">
-          <?php echo $content ?? ''; ?>
-        </div>
-      </div>
-    </div>
-    <!-- / Content -->
+    <?php echo $content ?? ''; ?>
 
     <!-- Core JS -->
     <script src="/assets/vendor/libs/jquery/jquery.js"></script>
@@ -95,14 +90,16 @@ $additionalScripts = $data['additionalScripts'] ?? [];
     <!-- Vendors JS -->
     <script src="/assets/vendor/libs/apex-charts/apexcharts.js"></script>
 
+    <?php foreach ($vendorScripts as $script): ?>
+        <script src="<?php echo $script; ?>"></script>
+    <?php endforeach; ?>
+
     <!-- Main JS -->
     <script src="/assets/js/main.js"></script>
 
-    <!-- Additional Scripts -->
-    <?php if(isset($additionalScripts)): ?>
-        <?php foreach($additionalScripts as $script): ?>
-            <script src="<?php echo $appUrl; ?><?php echo $script; ?>"></script>
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <!-- Page JS -->
+    <?php foreach ($additionalScripts as $script): ?>
+        <script src="<?php echo $script; ?>"></script>
+    <?php endforeach; ?>
   </body>
 </html>

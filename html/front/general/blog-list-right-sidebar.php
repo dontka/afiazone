@@ -1,3 +1,7 @@
+<?php
+$pageTitle = 'Blog - AfiaZone';
+ob_start();
+?>
 ﻿<div class="rts-navigation-area-breadcrumb">
         <div class="container">
             <div class="row">
@@ -77,7 +81,7 @@
                                 <!-- single latest post -->
                                 <div class="single-latest-post-area">
                                     <a href="blog-details.php" class="thumbnail">
-                                        <img src="/assets/images/blog/thumb/01.jpg" alt="thumbnail">
+                                        <img src="/html/front/assets/images/blog/thumb/01.jpg" alt="thumbnail">
                                     </a>
                                     <div class="inner-content-area">
                                         <div class="icon-top-area">
@@ -95,7 +99,7 @@
                                 <!-- single latest post -->
                                 <div class="single-latest-post-area">
                                     <a href="blog-details.php" class="thumbnail">
-                                        <img src="/assets/images/blog/thumb/02.jpg" alt="thumbnail">
+                                        <img src="/html/front/assets/images/blog/thumb/02.jpg" alt="thumbnail">
                                     </a>
                                     <div class="inner-content-area">
                                         <div class="icon-top-area">
@@ -113,7 +117,7 @@
                                 <!-- single latest post -->
                                 <div class="single-latest-post-area">
                                     <a href="blog-details.php" class="thumbnail">
-                                        <img src="/assets/images/blog/thumb/03.jpg" alt="thumbnail">
+                                        <img src="/html/front/assets/images/blog/thumb/03.jpg" alt="thumbnail">
                                     </a>
                                     <div class="inner-content-area">
                                         <div class="icon-top-area">
@@ -165,56 +169,56 @@
                                 <!-- single-instagram-post -->
                                 <a href="#">
                                     <div class="single-instagram-post">
-                                        <img src="/assets/images/blog/thumb/04.jpg" alt="post">
+                                        <img src="/html/front/assets/images/blog/thumb/04.jpg" alt="post">
                                     </div>
                                 </a>
                                 <!-- single-instagram-post end -->
                                 <!-- single-instagram-post -->
                                 <a href="#">
                                     <div class="single-instagram-post">
-                                        <img src="/assets/images/blog/thumb/05.jpg" alt="post">
+                                        <img src="/html/front/assets/images/blog/thumb/05.jpg" alt="post">
                                     </div>
                                 </a>
                                 <!-- single-instagram-post end -->
                                 <!-- single-instagram-post -->
                                 <a href="#">
                                     <div class="single-instagram-post">
-                                        <img src="/assets/images/blog/thumb/06.jpg" alt="post">
+                                        <img src="/html/front/assets/images/blog/thumb/06.jpg" alt="post">
                                     </div>
                                 </a>
                                 <!-- single-instagram-post end -->
                                 <!-- single-instagram-post -->
                                 <a href="#">
                                     <div class="single-instagram-post">
-                                        <img src="/assets/images/blog/thumb/07.jpg" alt="post">
+                                        <img src="/html/front/assets/images/blog/thumb/07.jpg" alt="post">
                                     </div>
                                 </a>
                                 <!-- single-instagram-post end -->
                                 <!-- single-instagram-post -->
                                 <a href="#">
                                     <div class="single-instagram-post">
-                                        <img src="/assets/images/blog/thumb/08.jpg" alt="post">
+                                        <img src="/html/front/assets/images/blog/thumb/08.jpg" alt="post">
                                     </div>
                                 </a>
                                 <!-- single-instagram-post end -->
                                 <!-- single-instagram-post -->
                                 <a href="#">
                                     <div class="single-instagram-post">
-                                        <img src="/assets/images/blog/thumb/09.jpg" alt="post">
+                                        <img src="/html/front/assets/images/blog/thumb/09.jpg" alt="post">
                                     </div>
                                 </a>
                                 <!-- single-instagram-post end -->
                                 <!-- single-instagram-post -->
                                 <a href="#">
                                     <div class="single-instagram-post">
-                                        <img src="/assets/images/blog/thumb/10.jpg" alt="post">
+                                        <img src="/html/front/assets/images/blog/thumb/10.jpg" alt="post">
                                     </div>
                                 </a>
                                 <!-- single-instagram-post end -->
                                 <!-- single-instagram-post -->
                                 <a href="#">
                                     <div class="single-instagram-post">
-                                        <img src="/assets/images/blog/thumb/11.jpg" alt="post">
+                                        <img src="/html/front/assets/images/blog/thumb/11.jpg" alt="post">
                                     </div>
                                 </a>
                                 <!-- single-instagram-post end -->
@@ -244,7 +248,7 @@
                     <div class="single-blog-main-wrapper-top">
                         <div class="single-blog-style-card-border mb--40">
                             <a href="blog-details.php" class="thumbnail">
-                                <img src="/assets/images/blog/17.jpg" alt="blog-area">
+                                <img src="/html/front/assets/images/blog/17.jpg" alt="blog-area">
                             </a>
                             <div class="inner-content-body">
                                 <div class="tag-area">
@@ -282,7 +286,7 @@
                         </div>
                         <div class="single-blog-style-card-border mb--40">
                             <a href="blog-details.php" class="thumbnail">
-                                <img src="/assets/images/blog/18.jpg" alt="blog-area">
+                                <img src="/html/front/assets/images/blog/18.jpg" alt="blog-area">
                             </a>
                             <div class="inner-content-body">
                                 <div class="tag-area">
@@ -320,7 +324,7 @@
                         </div>
                         <div class="single-blog-style-card-border mb--40">
                             <a href="blog-details.php" class="thumbnail">
-                                <img src="/assets/images/blog/19.jpg" alt="blog-area">
+                                <img src="/html/front/assets/images/blog/19.jpg" alt="blog-area">
                             </a>
                             <div class="inner-content-body">
                                 <div class="tag-area">
@@ -358,7 +362,7 @@
                         </div>
                         <div class="single-blog-style-card-border mb--40">
                             <a href="blog-details.php" class="thumbnail">
-                                <img src="/assets/images/blog/20.jpg" alt="blog-area">
+                                <img src="/html/front/assets/images/blog/20.jpg" alt="blog-area">
                             </a>
                             <div class="inner-content-body">
                                 <div class="tag-area">
@@ -396,7 +400,7 @@
                         </div>
                         <div class="single-blog-style-card-border mb--40">
                             <a href="blog-details.php" class="thumbnail">
-                                <img src="/assets/images/blog/21.jpg" alt="blog-area">
+                                <img src="/html/front/assets/images/blog/21.jpg" alt="blog-area">
                             </a>
                             <div class="inner-content-body">
                                 <div class="tag-area">
@@ -534,3 +538,6 @@
     </div>
 
     
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layouts/frontend.php';

@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="keywords" content="Grocery, Store, stores">
     <title>Shared on NULLPHPSCRIPT.COM - Ekomart-Grocery-Store(e-Commerce) HTML Template</title>
-    <link rel="shortcut icon" type="image/x-icon" href="/assets/images/fav.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/html/front/assets/images/fav.png">
     <!-- plugins css -->
-    <link rel="stylesheet preload" href="/assets/css/plugins.css" as="style">
-    <link rel="stylesheet preload" href="/assets/css/style.css" as="style">
+    <link rel="stylesheet preload" href="/html/front/assets/css/plugins.css" as="style">
+    <link rel="stylesheet preload" href="/html/front/assets/css/style.css" as="style">
 
 </head>
 <body class="invoice-3">
@@ -24,7 +24,7 @@
                     <div class="invoice-main-wrapper-1">
                         <div class="logo-top-area">
                             <div class="logo">
-                                <img src="/assets/images/logo/logo-01.svg" alt="logo">
+                                <img src="/html/front/assets/images/logo/logo-01.svg" alt="logo">
                             </div>
                             <div class="invoice-location">
                                 <h6 class="title">Invoice</h6>
@@ -111,7 +111,7 @@
                         <div class="invoice-area-bottom">
                             <div class="powerby">
                                 <p>Powerby</p>
-                                <img src="/assets/images/logo/fav.png" alt="">
+                                <img src="/html/front/assets/images/logo/fav.png" alt="">
                             </div>
                             <p>Note:This is computer generated receipt and does not require physical signature.</p>
                         </div>
@@ -129,7 +129,7 @@
                                 <i class="fa-regular fa-print"></i>
                             </div>
                         </a>
-                        <a href="/assets/images/invoice/invoice.pdf" download class="rts-btn btn-primary radious-sm with-icon">
+                        <a href="/html/front/assets/images/invoice/invoice.pdf" download class="rts-btn btn-primary radious-sm with-icon">
                             <div class="btn-text">
                                 Download
                             </div>
@@ -158,29 +158,29 @@
                     <div class="cursor"></div>
                     <div class="thumb-wrapper one filterd-items figure">
                         <div class="product-thumb zoom" onmousemove="zoom(event)"
-                            style="background-image: url(assets/images/products/product-details.jpg)"><img
-                                src="/assets/images/products/product-details.jpg" alt="product-thumb">
+                            style="background-image: url(/html/front/assets/images/products/product-details.jpg)"><img
+                                src="/html/front/assets/images/products/product-details.jpg" alt="product-thumb">
                         </div>
                     </div>
                     <div class="thumb-wrapper two filterd-items hide">
                         <div class="product-thumb zoom" onmousemove="zoom(event)"
-                            style="background-image: url(assets/images/products/product-filt2.jpg)"><img
-                                src="/assets/images/products/product-filt2.jpg" alt="product-thumb">
+                            style="background-image: url(/html/front/assets/images/products/product-filt2.jpg)"><img
+                                src="/html/front/assets/images/products/product-filt2.jpg" alt="product-thumb">
                         </div>
                     </div>
                     <div class="thumb-wrapper three filterd-items hide">
                         <div class="product-thumb zoom" onmousemove="zoom(event)"
-                            style="background-image: url(assets/images/products/product-filt3.jpg)"><img
-                                src="/assets/images/products/product-filt3.jpg" alt="product-thumb">
+                            style="background-image: url(/html/front/assets/images/products/product-filt3.jpg)"><img
+                                src="/html/front/assets/images/products/product-filt3.jpg" alt="product-thumb">
                         </div>
                     </div>
                     <div class="product-thumb-filter-group">
                         <div class="thumb-filter filter-btn active" data-show=".one"><img
-                                src="/assets/images/products/product-filt1.jpg" alt="product-thumb-filter"></div>
+                                src="/html/front/assets/images/products/product-filt1.jpg" alt="product-thumb-filter"></div>
                         <div class="thumb-filter filter-btn" data-show=".two"><img
-                                src="/assets/images/products/product-filt2.jpg" alt="product-thumb-filter"></div>
+                                src="/html/front/assets/images/products/product-filt2.jpg" alt="product-thumb-filter"></div>
                         <div class="thumb-filter filter-btn" data-show=".three"><img
-                                src="/assets/images/products/product-filt3.jpg" alt="product-thumb-filter"></div>
+                                src="/html/front/assets/images/products/product-filt3.jpg" alt="product-thumb-filter"></div>
                     </div>
                 </div>
                 <div class="contents">
@@ -269,17 +269,17 @@
                 <div class="single-compare-elements name">Preview</div>
                 <div class="single-compare-elements">
                     <div class="thumbnail-preview">
-                        <img src="/assets/images/grocery/01.jpg" alt="grocery">
+                        <img src="/html/front/assets/images/grocery/01.jpg" alt="grocery">
                     </div>
                 </div>
                 <div class="single-compare-elements">
                     <div class="thumbnail-preview">
-                        <img src="/assets/images/grocery/02.jpg" alt="grocery">
+                        <img src="/html/front/assets/images/grocery/02.jpg" alt="grocery">
                     </div>
                 </div>
                 <div class="single-compare-elements">
                     <div class="thumbnail-preview">
-                        <img src="/assets/images/grocery/03.jpg" alt="grocery">
+                        <img src="/html/front/assets/images/grocery/03.jpg" alt="grocery">
                     </div>
                 </div>
             </div>
@@ -493,10 +493,10 @@
      
      
     <!-- plugins js -->
-    <script defer src="/assets/js/plugins.js"></script>
+    <script defer src="/html/front/assets/js/plugins.js"></script>
 
     <!-- custom js -->
-    <script defer src="/assets/js/main.js"></script>
+    <script defer src="/html/front/assets/js/main.js"></script>
     <!-- header style two End -->
      
 </body>

@@ -1,3 +1,7 @@
+<?php
+$pageTitle = 'À propos - AfiaZone';
+ob_start();
+?>
 ﻿<!-- rts banner area about -->
     <div class="about-banner-area-bg rts-section-gap bg_iamge">
         <div class="container">
@@ -62,7 +66,7 @@
             <div class="row align-items-center">
                 <div class="col-lg-4">
                     <div class="thumbnail-left">
-                        <img src="/assets/images/about/02.jpg" alt="">
+                        <img src="/html/front/assets/images/about/02.jpg" alt="">
                     </div>
                 </div>
                 <div class="col-lg-8 pl--60 pl_md--10 pt_md--30 pl_sm--10 pt_sm--30">
@@ -128,7 +132,7 @@
                     <!-- single team area start -->
                     <div class="single-team-style-one">
                         <a href="#" class="thumbnail">
-                            <img src="/assets/images/team/01.jpg" alt="team_single">
+                            <img src="/html/front/assets/images/team/01.jpg" alt="team_single">
                         </a>
                         <div class="bottom-content-area">
                             <div class="top">
@@ -151,7 +155,7 @@
                     <!-- single team area start -->
                     <div class="single-team-style-one">
                         <a href="#" class="thumbnail">
-                            <img src="/assets/images/team/02.jpg" alt="team_single">
+                            <img src="/html/front/assets/images/team/02.jpg" alt="team_single">
                         </a>
                         <div class="bottom-content-area">
                             <div class="top">
@@ -174,7 +178,7 @@
                     <!-- single team area start -->
                     <div class="single-team-style-one">
                         <a href="#" class="thumbnail">
-                            <img src="/assets/images/team/03.jpg" alt="team_single">
+                            <img src="/html/front/assets/images/team/03.jpg" alt="team_single">
                         </a>
                         <div class="bottom-content-area">
                             <div class="top">
@@ -197,7 +201,7 @@
                     <!-- single team area start -->
                     <div class="single-team-style-one">
                         <a href="#" class="thumbnail">
-                            <img src="/assets/images/team/04.jpg" alt="team_single">
+                            <img src="/html/front/assets/images/team/04.jpg" alt="team_single">
                         </a>
                         <div class="bottom-content-area">
                             <div class="top">
@@ -241,7 +245,7 @@
                     <div class="single-service-area-style-one">
                         <div class="icon-area">
                             <span class="bg-text">01</span>
-                            <img src="/assets/images/service/01.svg" alt="service">
+                            <img src="/html/front/assets/images/service/01.svg" alt="service">
                         </div>
                         <div class="bottom-content">
                             <h3 class="title">
@@ -257,7 +261,7 @@
                     <div class="single-service-area-style-one">
                         <div class="icon-area">
                             <span class="bg-text">02</span>
-                            <img src="/assets/images/service/02.svg" alt="service">
+                            <img src="/html/front/assets/images/service/02.svg" alt="service">
                         </div>
                         <div class="bottom-content">
                             <h3 class="title">
@@ -273,7 +277,7 @@
                     <div class="single-service-area-style-one">
                         <div class="icon-area">
                             <span class="bg-text">03</span>
-                            <img src="/assets/images/service/03.svg" alt="service">
+                            <img src="/html/front/assets/images/service/03.svg" alt="service">
                         </div>
                         <div class="bottom-content">
                             <h3 class="title">
@@ -348,7 +352,7 @@
                                                     <div class="single-customers-feedback-area">
                                                         <div class="top-thumbnail-area">
                                                             <div class="left">
-                                                                <img src="/assets/images/testimonial/01.png" alt="logo">
+                                                                <img src="/html/front/assets/images/testimonial/01.png" alt="logo">
                                                                 <div class="information">
                                                                     <h4 class="title">
                                                                         Andrew D. Smith
@@ -357,7 +361,7 @@
                                                                 </div>
                                                             </div>
                                                             <div class="right">
-                                                                <img src="/assets/images/testimonial/02.png" alt="logo">
+                                                                <img src="/html/front/assets/images/testimonial/02.png" alt="logo">
                                                             </div>
                                                         </div>
                                                         <div class="body-content">
@@ -478,3 +482,6 @@
     </div>
 
     
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layouts/frontend.php';
