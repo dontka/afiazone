@@ -19,6 +19,12 @@ class AuthMiddleware extends Middleware
         }
 
         if (!$token) {
+            // Redirect admin pages to login instead of JSON 401
+            $uri = $_SERVER['REQUEST_URI'] ?? '';
+            if (str_starts_with($uri, '/admin')) {
+                header('Location: /admin/login');
+                exit;
+            }
             $this->abort(['error' => 'Missing authorization token'], 401);
         }
 
@@ -32,6 +38,11 @@ class AuthMiddleware extends Middleware
         $payload = $authService->validateToken($token);
 
         if (!$payload) {
+            $uri = $_SERVER['REQUEST_URI'] ?? '';
+            if (str_starts_with($uri, '/admin')) {
+                header('Location: /admin/login');
+                exit;
+            }
             $this->abort(['error' => 'Invalid or expired token'], 401);
         }
 

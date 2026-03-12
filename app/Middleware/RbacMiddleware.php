@@ -18,6 +18,11 @@ class RbacMiddleware extends Middleware
         /** @var ?User $user */
         $user = $GLOBALS['auth_user'] ?? null;
         if (!$user) {
+            $uri = $_SERVER['REQUEST_URI'] ?? '';
+            if (str_starts_with($uri, '/admin')) {
+                header('Location: /admin/login');
+                exit;
+            }
             $this->abort(['error' => 'Authentication required'], 401);
         }
 

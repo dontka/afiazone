@@ -105,10 +105,21 @@ $controllerClass = 'App\\Controllers\\' . $controllerName;
 
 // Apply middleware
 $middleware = $matchedRoute['middleware'] ?? [];
-foreach ($middleware as $middlewareName) {
+foreach ($middleware as $middlewareEntry) {
+    $params = [];
+    $middlewareName = $middlewareEntry;
+
+    // Parse parameters: "rbac:admin,moderator" => name="rbac", params=["admin","moderator"]
+    if (str_contains($middlewareEntry, ':')) {
+        [$middlewareName, $paramStr] = explode(':', $middlewareEntry, 2);
+        $params = explode(',', $paramStr);
+    }
+
     $middlewareClass = 'App\\Middleware\\' . ucfirst($middlewareName) . 'Middleware';
     if (class_exists($middlewareClass)) {
-        $middlewareInstance = new $middlewareClass();
+        $middlewareInstance = empty($params)
+            ? new $middlewareClass()
+            : new $middlewareClass($params);
         if (!$middlewareInstance->handle()) {
             abort(401, 'Unauthorized');
         }

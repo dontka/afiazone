@@ -65,8 +65,10 @@ class AuthController extends BaseController
                 return;
             }
 
-            // Set auth cookie (HttpOnly, Secure in production)
-            $secure = env('APP_ENV', 'production') !== 'local';
+            // Set auth cookie (HttpOnly, Secure only in production over HTTPS)
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                    || (($_SERVER['SERVER_PORT'] ?? 80) == 443);
+            $secure = $isHttps;
             $ttl = (int) env('JWT_EXPIRATION', 3600);
             setcookie('auth_token', $result['token'], [
                 'expires' => time() + $ttl,
