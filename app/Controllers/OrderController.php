@@ -48,7 +48,7 @@ class OrderController extends BaseController
 
     public function updateStatus(int $id): void
     {
-        $this->authorize('orders.update_status');
+        $this->authorize('update_order');
         $this->orderService->updateStatus(
             $id,
             (string) $this->getData('status'),

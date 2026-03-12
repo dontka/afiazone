@@ -58,10 +58,10 @@ class AuthController extends BaseController
             $result = $this->authService->login($email, $password);
             $user = $result['user'];
 
-            // Verify admin/moderator role
+            // Verify role allowed in back-office dashboards
             $roles = $user['roles'] ?? [];
-            if (empty(array_intersect($roles, ['admin', 'moderator', 'super_admin']))) {
-                $this->redirect('/admin/login?error=' . urlencode('Access denied. Admin privileges required.'));
+            if (empty(array_intersect($roles, ['super_admin', 'admin', 'moderator', 'merchant', 'partner', 'deliverer']))) {
+                $this->redirect('/admin/login?error=' . urlencode('Access denied. Role not allowed for back-office.'));
                 return;
             }
 
@@ -78,7 +78,27 @@ class AuthController extends BaseController
                 'samesite' => 'Lax',
             ]);
 
-            $this->redirect('/admin/dashboard');
+            if (!empty(array_intersect($roles, ['super_admin', 'admin', 'moderator']))) {
+                $this->redirect('/admin/dashboard');
+                return;
+            }
+
+            if (in_array('merchant', $roles, true)) {
+                $this->redirect('/admin/dashboard/merchant');
+                return;
+            }
+
+            if (in_array('partner', $roles, true)) {
+                $this->redirect('/admin/dashboard/partner');
+                return;
+            }
+
+            if (in_array('deliverer', $roles, true)) {
+                $this->redirect('/admin/dashboard/deliverer');
+                return;
+            }
+
+            $this->redirect('/admin/login?error=' . urlencode('No dashboard available for this role.'));
         } catch (\App\Exceptions\UnauthorizedException $e) {
             $this->redirect('/admin/login?error=' . urlencode('Invalid email or password'));
         } catch (\App\Exceptions\ForbiddenException $e) {

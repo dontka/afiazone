@@ -2,6 +2,99 @@
 $pageTitle = 'Inscription - AfiaZone';
 $inlineScripts = <<<'INLINE_SCRIPTS'
 <script>
+function getSafeReturnUrl() {
+    var params = new URLSearchParams(window.location.search);
+    var redirect = params.get('redirect');
+
+    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/auth/')) {
+        return redirect;
+    }
+
+    var ref = document.referrer || '';
+    if (ref) {
+        try {
+            var refUrl = new URL(ref);
+            if (refUrl.origin === window.location.origin && !refUrl.pathname.startsWith('/auth/')) {
+                return refUrl.pathname + refUrl.search + refUrl.hash;
+            }
+        } catch (e) {
+        }
+    }
+
+    return '/';
+}
+
+function getRoleBasedDefaultUrlFromRoles(roles) {
+    roles = Array.isArray(roles) ? roles : [];
+
+    if (roles.indexOf('merchant') !== -1) {
+        return '/admin/dashboard/merchant';
+    }
+
+    if (roles.indexOf('partner') !== -1) {
+        return '/admin/dashboard/partner';
+    }
+
+    if (roles.indexOf('deliverer') !== -1) {
+        return '/admin/dashboard/deliverer';
+    }
+
+    return '/';
+}
+
+function parseJwtRoles(token) {
+    if (!token || token.split('.').length < 2) {
+        return [];
+    }
+
+    try {
+        var payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        while (payload.length % 4 !== 0) {
+            payload += '=';
+        }
+        var decoded = JSON.parse(atob(payload));
+        return Array.isArray(decoded.roles) ? decoded.roles : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+var returnUrl = getSafeReturnUrl();
+
+function guardAlreadyAuthenticated() {
+    var token = localStorage.getItem('auth_token');
+    if (!token) {
+        return;
+    }
+
+    var fallbackDestination = getRoleBasedDefaultUrlFromRoles(parseJwtRoles(token));
+
+    fetch('/me', {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token
+        }
+    })
+    .then(function(r) {
+        if (r.status === 401) {
+            localStorage.removeItem('auth_token');
+            return null;
+        }
+        return r.json();
+    })
+    .then(function(res) {
+        if (res && res.success) {
+            var destination = returnUrl === '/' ? fallbackDestination : returnUrl;
+            window.location.replace(destination);
+        }
+    })
+    .catch(function() {
+    });
+}
+
+guardAlreadyAuthenticated();
+
 document.getElementById('registerForm').addEventListener('submit', function(e) {
     e.preventDefault();
     var errorDiv = document.getElementById('register-error');
@@ -20,13 +113,16 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
         })
     })
     .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.user) {
-            successDiv.textContent = 'Inscription réussie ! Vérifiez votre email.';
+    .then(function(res) {
+        if (res.data && res.data.user) {
+            if (res.data.token) {
+                localStorage.setItem('auth_token', res.data.token);
+            }
+            successDiv.textContent = 'Inscription réussie ! Redirection...';
             successDiv.style.display = 'block';
-            setTimeout(function() { window.location.href = '/auth/login'; }, 2000);
+            setTimeout(function() { window.location.href = returnUrl; }, 1000);
         } else {
-            errorDiv.textContent = data.error || data.message || 'Erreur lors de l\'inscription.';
+            errorDiv.textContent = res.message || (res.data && res.data.error) || 'Erreur lors de l\'inscription.';
             errorDiv.style.display = 'block';
         }
     })
@@ -103,7 +199,7 @@ ob_start();
                                         <img src="/html/front/assets/images/form/facebook.svg" alt="login">
                                     </a>
                                 </div>
-                                <p>Already Have Account? <a href="#">Login</a></p>
+                                <p>Already Have Account? <a href="/auth/login">Login</a></p>
                             </div>
                         </form>
                     </div>

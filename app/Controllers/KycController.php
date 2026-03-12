@@ -34,14 +34,14 @@ class KycController extends BaseController
 
     public function approve(int $id): void
     {
-        $this->authorize('kyc.review');
+        $this->authorize('manage_kyc');
         $this->kycService->approve($id, $this->authUserId(), (string) ($this->getData('notes') ?? ''));
         $this->jsonResponse(['message' => 'KYC approved']);
     }
 
     public function reject(int $id): void
     {
-        $this->authorize('kyc.review');
+        $this->authorize('manage_kyc');
         $this->kycService->reject($id, $this->authUserId(), (string) ($this->getData('reason') ?? ''));
         $this->jsonResponse(['message' => 'KYC rejected']);
     }

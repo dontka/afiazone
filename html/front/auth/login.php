@@ -1,7 +1,109 @@
 <?php
 $pageTitle = 'Connexion - AfiaZone';
+$error = $_GET['error'] ?? '';
+$success = $_GET['success'] ?? '';
 $inlineScripts = <<<'INLINE_SCRIPTS'
 <script>
+function getSafeReturnUrl() {
+    var params = new URLSearchParams(window.location.search);
+    var redirect = params.get('redirect');
+
+    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/auth/')) {
+        return redirect;
+    }
+
+    var ref = document.referrer || '';
+    if (ref) {
+        try {
+            var refUrl = new URL(ref);
+            if (refUrl.origin === window.location.origin && !refUrl.pathname.startsWith('/auth/')) {
+                return refUrl.pathname + refUrl.search + refUrl.hash;
+            }
+        } catch (e) {
+        }
+    }
+
+    return '/';
+}
+
+function getRoleBasedDefaultUrl(res) {
+    var user = res && res.data && res.data.user ? res.data.user : null;
+    var roles = user && Array.isArray(user.roles) ? user.roles : [];
+
+    return getRoleBasedDefaultUrlFromRoles(roles);
+}
+
+function getRoleBasedDefaultUrlFromRoles(roles) {
+    roles = Array.isArray(roles) ? roles : [];
+
+    if (roles.indexOf('merchant') !== -1) {
+        return '/admin/dashboard/merchant';
+    }
+
+    if (roles.indexOf('partner') !== -1) {
+        return '/admin/dashboard/partner';
+    }
+
+    if (roles.indexOf('deliverer') !== -1) {
+        return '/admin/dashboard/deliverer';
+    }
+
+    return '/';
+}
+
+function parseJwtRoles(token) {
+    if (!token || token.split('.').length < 2) {
+        return [];
+    }
+
+    try {
+        var payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        while (payload.length % 4 !== 0) {
+            payload += '=';
+        }
+        var decoded = JSON.parse(atob(payload));
+        return Array.isArray(decoded.roles) ? decoded.roles : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+var returnUrl = getSafeReturnUrl();
+
+function guardAlreadyAuthenticated() {
+    var token = localStorage.getItem('auth_token');
+    if (!token) {
+        return;
+    }
+
+    var fallbackDestination = getRoleBasedDefaultUrlFromRoles(parseJwtRoles(token));
+
+    fetch('/me', {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token
+        }
+    })
+    .then(function(r) {
+        if (r.status === 401) {
+            localStorage.removeItem('auth_token');
+            return null;
+        }
+        return r.json();
+    })
+    .then(function(res) {
+        if (res && res.success) {
+            var destination = returnUrl === '/' ? fallbackDestination : returnUrl;
+            window.location.replace(destination);
+        }
+    })
+    .catch(function() {
+    });
+}
+
+guardAlreadyAuthenticated();
+
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
     var errorDiv = document.getElementById('login-error');
@@ -18,14 +120,19 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
         })
     })
     .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.token) {
-            localStorage.setItem('auth_token', data.token);
+    .then(function(res) {
+        var token = res.data && res.data.token;
+        if (token) {
+            localStorage.setItem('auth_token', token);
             successDiv.textContent = 'Connexion réussie ! Redirection...';
             successDiv.style.display = 'block';
-            setTimeout(function() { window.location.href = '/'; }, 1000);
+            var destination = returnUrl;
+            if (destination === '/') {
+                destination = getRoleBasedDefaultUrl(res);
+            }
+            setTimeout(function() { window.location.href = destination; }, 800);
         } else {
-            errorDiv.textContent = data.error || data.message || 'Identifiants invalides.';
+            errorDiv.textContent = res.message || (res.data && res.data.error) || 'Identifiants invalides.';
             errorDiv.style.display = 'block';
         }
     })
@@ -70,6 +177,12 @@ ob_start();
                             <img class="mb--10" src="/html/front/assets/images/logo/fav.png" alt="logo">
                         </div>
                         <h3 class="title">Login Into Your Account</h3>
+                        <?php if (!empty($error)): ?>
+                        <div class="alert alert-danger" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($success)): ?>
+                        <div class="alert alert-success" role="alert"><?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?></div>
+                        <?php endif; ?>
                         <div id="login-error" class="alert alert-danger" style="display:none;"></div>
                         <div id="login-success" class="alert alert-success" style="display:none;"></div>
                         <form id="loginForm" class="registration-form">
@@ -83,6 +196,7 @@ ob_start();
                             </div>
                             <button type="submit" class="rts-btn btn-primary">Login Account</button>
                             <div class="another-way-to-registration">
+                                <p><a href="/auth/forgot-password">Forgot Password?</a></p>
                                 <div class="registradion-top-text">
                                     <span>Or Register With</span>
                                 </div>
@@ -94,7 +208,7 @@ ob_start();
                                         <img src="/html/front/assets/images/form/facebook.svg" alt="login">
                                     </a>
                                 </div>
-                                <p>Already Have Account? <a href="#">Login</a></p>
+                                <p>Don't Have Account? <a href="/auth/register">Register</a></p>
                             </div>
                         </form>
                     </div>

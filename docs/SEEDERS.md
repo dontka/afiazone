@@ -76,6 +76,22 @@ return [
 | `livreur3@afiazone.com` | deliverer | `Password123!` |
 | `partner1@example.com` | partner | `Password123!` |
 
+## Comment tester la connexion par rôle
+
+| Rôle | Où se connecter | URL / Endpoint | Résultat |
+|------|------------------|----------------|----------|
+| `admin`, `moderator` | Panel admin (HTML) | `GET/POST /admin/login` | Cookie `auth_token` + accès dashboard |
+| `merchant` | Panel admin (HTML) ou Auth publique (API/front) | `/admin/login` ou `POST /auth/login` | Redirect `/admin/dashboard/merchant` (admin login) ou JWT (`data.token`) |
+| `partner` | Panel admin (HTML) ou Auth publique (API/front) | `/admin/login` ou `POST /auth/login` | Redirect `/admin/dashboard/partner` (admin login) ou JWT (`data.token`) |
+| `deliverer` | Panel admin (HTML) ou Auth publique (API/front) | `/admin/login` ou `POST /auth/login` | Redirect `/admin/dashboard/deliverer` (admin login) ou JWT (`data.token`) |
+| `customer` | Auth publique (API/front) | `POST /auth/login` ou page `GET /auth/login` | JWT (`data.token`) + utilisateur (`data.user`) |
+
+Notes :
+
+- `customer` n'a pas accès au panel `/admin/*`.
+- `merchant`, `partner`, `deliverer` ont un dashboard dédié côté `/admin/dashboard/*`.
+- Pour les détails complets auth/JWT/middlewares, voir `docs/AUTH.md`.
+
 ## Ordre d'exécution et dépendances
 
 ```

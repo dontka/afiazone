@@ -31,6 +31,14 @@ class DashboardController extends BaseController
     }
 
     /**
+     * Dashboard pour les livreurs
+     */
+    public function delivererDashboard(): void
+    {
+        require base_path('html/back/dashboard/partener-dashboard.php');
+    }
+
+    /**
      * Dashboard simplifié par défaut
      */
     public function dashboard(): void

@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Dashboard - eCommerce | Vuexy - Bootstrap Admin Template';
+$pageTitle = 'Marchant-Dashboard';
 $additionalScripts = ['/assets/js/dashboards-ecommerce.js'];
 ob_start();
 ?>

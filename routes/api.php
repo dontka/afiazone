@@ -17,10 +17,13 @@ return [
     // ── Auth (pages) ──────────────────────────────
     ['method' => 'GET',  'path' => '/auth/login',           'controller' => 'AuthController@showLogin'],
     ['method' => 'GET',  'path' => '/auth/register',        'controller' => 'AuthController@showRegister'],
+    ['method' => 'GET',  'path' => '/auth/forgot-password', 'controller' => 'AuthController@showForgotPassword'],
+    ['method' => 'GET',  'path' => '/auth/reset-password',  'controller' => 'AuthController@showResetPassword'],
 
     // ── Auth (API) ─────────────────────────────────
     ['method' => 'POST', 'path' => '/auth/register',        'controller' => 'AuthController@register'],
     ['method' => 'POST', 'path' => '/auth/login',           'controller' => 'AuthController@login'],
+    ['method' => 'GET',  'path' => '/auth/logout',          'controller' => 'AuthController@logout'],
     ['method' => 'POST', 'path' => '/auth/logout',          'controller' => 'AuthController@logout',        'middleware' => ['auth']],
     ['method' => 'POST', 'path' => '/auth/refresh',         'controller' => 'AuthController@refresh'],
     ['method' => 'POST', 'path' => '/auth/verify-email',    'controller' => 'AuthController@verifyEmail'],
@@ -79,6 +82,7 @@ return [
     ['method' => 'GET',  'path' => '/admin/reset-password',    'controller' => 'Admin\AuthController@showResetPassword'],
     ['method' => 'POST', 'path' => '/admin/reset-password',    'controller' => 'Admin\AuthController@resetPassword'],
     ['method' => 'GET',  'path' => '/admin/2fa',               'controller' => 'Admin\AuthController@show2FA'],
+    ['method' => 'GET',  'path' => '/admin/logout',            'controller' => 'Admin\AuthController@logout'],
     ['method' => 'POST', 'path' => '/admin/logout',            'controller' => 'Admin\AuthController@logout'],
 
     // Admin - Dashboard
@@ -86,4 +90,5 @@ return [
     ['method' => 'GET', 'path' => '/admin/dashboard/admin', 'controller' => 'Admin\DashboardController@adminDashboard',    'middleware' => ['auth', 'rbac:super_admin,admin']],
     ['method' => 'GET', 'path' => '/admin/dashboard/merchant', 'controller' => 'Admin\DashboardController@merchantDashboard', 'middleware' => ['auth', 'rbac:super_admin,admin,merchant']],
     ['method' => 'GET', 'path' => '/admin/dashboard/partner',       'controller' => 'Admin\DashboardController@partnerDashboard',  'middleware' => ['auth', 'rbac:super_admin,admin,partner']],
+    ['method' => 'GET', 'path' => '/admin/dashboard/deliverer',     'controller' => 'Admin\DashboardController@delivererDashboard','middleware' => ['auth', 'rbac:super_admin,admin,deliverer']],
 ];

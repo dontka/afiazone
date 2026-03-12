@@ -26,19 +26,55 @@ class AuthController extends BaseController
         require base_path('html/front/auth/register.php');
     }
 
+    public function showForgotPassword(): void
+    {
+        require base_path('html/front/auth/forgot-password.php');
+    }
+
+    public function showResetPassword(): void
+    {
+        require base_path('html/front/auth/reset-password.php');
+    }
+
     public function register(): void
     {
-        $result = $this->authService->register($this->getData());
-        $this->jsonResponse($result, 201, 'Registration successful');
+        try {
+            $result = $this->authService->register($this->getData());
+            $this->jsonResponse($result, 201, 'Registration successful');
+        } catch (\App\Exceptions\ValidationException $e) {
+            $this->errorResponse($e->getMessage(), 422, $e->getErrors());
+        } catch (\Throwable $e) {
+            $this->errorResponse($e->getMessage(), 400);
+        }
     }
 
     public function login(): void
     {
-        $result = $this->authService->login(
-            (string) $this->getData('email'),
-            (string) $this->getData('password')
-        );
-        $this->jsonResponse($result);
+        try {
+            $result = $this->authService->login(
+                (string) $this->getData('email'),
+                (string) $this->getData('password')
+            );
+
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                    || (($_SERVER['SERVER_PORT'] ?? 80) == 443);
+            $ttl = (int) env('JWT_EXPIRATION', 3600);
+            setcookie('auth_token', $result['token'], [
+                'expires' => time() + $ttl,
+                'path' => '/',
+                'httponly' => true,
+                'secure' => $isHttps,
+                'samesite' => 'Lax',
+            ]);
+
+            $this->jsonResponse($result);
+        } catch (\App\Exceptions\UnauthorizedException $e) {
+            $this->errorResponse($e->getMessage(), 401);
+        } catch (\App\Exceptions\ForbiddenException $e) {
+            $this->errorResponse($e->getMessage(), 403);
+        } catch (\Throwable $e) {
+            $this->errorResponse('Login failed', 500);
+        }
     }
 
     public function refresh(): void
@@ -57,11 +93,31 @@ class AuthController extends BaseController
     public function logout(): void
     {
         $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $token = '';
+        $token = (string) ($this->getData('token') ?? ($_COOKIE['auth_token'] ?? ''));
         if (preg_match('/Bearer\s+(.+)/', $header, $m)) {
             $token = $m[1];
         }
+
         $this->authService->logout($token);
+
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if ($method === 'GET') {
+            setcookie('auth_token', '', [
+                'expires' => time() - 3600,
+                'path' => '/',
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+
+            $redirect = (string) ($this->getData('redirect') ?? '/');
+            if (!str_starts_with($redirect, '/') || str_starts_with($redirect, '//')) {
+                $redirect = '/';
+            }
+
+            $this->redirect($redirect);
+            return;
+        }
+
         $this->jsonResponse(['message' => 'Logout successful']);
     }
 
@@ -69,6 +125,17 @@ class AuthController extends BaseController
     {
         $token = $this->getData('token') ?? '';
         $ok = $this->authService->verifyEmail($token);
+
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if ($method === 'GET') {
+            if ($ok) {
+                $this->redirect('/auth/login?success=' . urlencode('Email vérifié avec succès. Vous pouvez vous connecter.'));
+                return;
+            }
+
+            $this->redirect('/auth/login?error=' . urlencode('Lien de vérification invalide ou expiré.'));
+            return;
+        }
 
         if (!$ok) {
             $this->errorResponse('Invalid or expired verification token', 400);
@@ -86,16 +153,22 @@ class AuthController extends BaseController
 
     public function resetPassword(): void
     {
-        $ok = $this->authService->resetPassword(
-            (string) $this->getData('token'),
-            (string) $this->getData('password')
-        );
+        try {
+            $ok = $this->authService->resetPassword(
+                (string) $this->getData('token'),
+                (string) $this->getData('password')
+            );
 
-        if (!$ok) {
-            $this->errorResponse('Invalid or expired reset token', 400);
-            return;
+            if (!$ok) {
+                $this->errorResponse('Invalid or expired reset token', 400);
+                return;
+            }
+
+            $this->jsonResponse(['message' => 'Password reset successfully']);
+        } catch (\App\Exceptions\ValidationException $e) {
+            $this->errorResponse($e->getMessage(), 422, $e->getErrors());
+        } catch (\Throwable $e) {
+            $this->errorResponse('Reset password failed', 500);
         }
-
-        $this->jsonResponse(['message' => 'Password reset successfully']);
     }
 }

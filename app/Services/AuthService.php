@@ -274,7 +274,7 @@ class AuthService extends BaseService
     private function sendPasswordResetEmail(User $user, string $plainToken): void
     {
         $appUrl = env('APP_URL', 'http://localhost');
-        $resetUrl = $appUrl . '/admin/reset-password?token=' . urlencode($plainToken);
+        $resetUrl = $appUrl . '/auth/reset-password?token=' . urlencode($plainToken);
 
         $html = $this->renderEmailTemplate('reset-password', [
             'name' => $user->first_name,

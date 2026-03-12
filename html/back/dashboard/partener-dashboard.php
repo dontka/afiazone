@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Dashboard - CRM | Vuexy - Bootstrap Admin Template';
+$pageTitle = 'Partener-Dashboard';
 $additionalScripts = ['/assets/js/dashboards-crm.js'];
 ob_start();
 ?>

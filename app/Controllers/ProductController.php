@@ -43,14 +43,14 @@ class ProductController extends BaseController
 
     public function store(): void
     {
-        $this->authorize('products.create');
+        $this->authorize('create_product');
         $product = $this->productService->create($this->getData(), $this->authUserId());
         $this->jsonResponse(['product' => $product->toArray()], 201);
     }
 
     public function update(int $id): void
     {
-        $this->authorize('products.update');
+        $this->authorize('update_product');
         $this->productService->update($id, $this->getData());
         $product = $this->productService->getById($id);
         $this->jsonResponse(['product' => $product?->toArray() ?? []]);
@@ -58,7 +58,7 @@ class ProductController extends BaseController
 
     public function destroy(int $id): void
     {
-        $this->authorize('products.delete');
+        $this->authorize('delete_product');
         $this->productService->delete($id);
         $this->jsonResponse(['message' => 'Product deleted']);
     }

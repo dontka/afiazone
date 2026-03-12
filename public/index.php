@@ -137,10 +137,40 @@ if (!method_exists($controller, $methodName)) {
     abort(500, 'Method not found: ' . $methodName);
 }
 
+$routeParams = array_values(array_filter($matches ?? [], 'is_string', ARRAY_FILTER_USE_KEY));
+$reflectionMethod = new ReflectionMethod($controller, $methodName);
+$invokeArgs = [];
+
+foreach ($reflectionMethod->getParameters() as $index => $parameter) {
+    $value = $routeParams[$index] ?? null;
+    $type = $parameter->getType();
+
+    if ($value !== null && $type instanceof ReflectionNamedType && $type->isBuiltin()) {
+        $value = match ($type->getName()) {
+            'int' => (int) $value,
+            'float' => (float) $value,
+            'bool' => filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? false,
+            'string' => (string) $value,
+            default => $value,
+        };
+    }
+
+    if ($value === null && !$parameter->isOptional()) {
+        abort(500, 'Missing route parameter: ' . $parameter->getName());
+    }
+
+    $invokeArgs[] = $value ?? $parameter->getDefaultValue();
+}
+
 // Execute
 try {
-    call_user_func_array([$controller, $methodName], []);
-} catch (Exception $e) {
+    $reflectionMethod->invokeArgs($controller, $invokeArgs);
+} catch (\App\Exceptions\HttpException $e) {
+    http_response_code($e->getStatusCode());
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    exit;
+} catch (\Throwable $e) {
     logger('Exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
     abort(500, 'Internal Server Error', ['error' => $e->getMessage()]);
 }
