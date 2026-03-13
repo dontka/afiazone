@@ -1732,20 +1732,14 @@ STRIPE_API_KEY=xxx (si applicable)
 
 ## E.1 Gestion des profils utilisateurs
 
-### E.1.1 – Endpoint GET /api/users/{id}
-
 - [ ] Récupérer infos utilisateur
 - [ ] Vérifier propriétaire ou admin
-
-### E.1.2 – Endpoint PUT /api/users/{id}
-
 - [ ] Éditer profil (nom, adresse, etc.)
 - [ ] Validation données
 - [ ] Audit log
 
 ### E.1.3 – Upload avatar
 
-- [ ] Endpoint POST `/api/users/{id}/avatar`
 - [ ] Validation format image (JPG, PNG)
 - [ ] Resize + compression
 - [ ] Upload S3
@@ -1754,8 +1748,6 @@ STRIPE_API_KEY=xxx (si applicable)
 ## E.2 Process KYC (Know Your Customer) ne concerne pas le client
 
 ### E.2.1 – Submission KYC
-
-- [ ] Endpoint POST `/api/kyc/submit`
 - [ ] Récupérer documents (ID, proof of address, etc.)
 - [ ] Validation file type + size
 - [ ] Upload S3
@@ -1764,9 +1756,7 @@ STRIPE_API_KEY=xxx (si applicable)
 
 ### E.2.2 – KYC Review (Admin)
 
-- [ ] Endpoint GET `/api/admin/kyc/pending`
-- [ ] Endpoint PUT `/api/admin/kyc/{id}/approve`
-- [ ] Endpoint PUT `/api/admin/kyc/{id}/reject`
+- [ ] En attente, Approuvé et regété
 - [ ] Audit log des décisions
 
 ### E.2.3 – Niveaux marchands
@@ -1785,14 +1775,12 @@ STRIPE_API_KEY=xxx (si applicable)
 
 ### E.3.1 – Merchant Registration
 
-- [ ] Endpoint POST `/api/merchants/register`
 - [ ] Créer merchant profile
 - [ ] Shipping info (warehouse address, return policy)
 - [ ] Fees configuration
 
 ### E.3.2 – Merchant Dashboard
 
-- [ ] Endpoint GET `/api/merchants/{id}/dashboard`
 - [ ] KPIs : total sales, total orders, rating
 - [ ] Récents commandes/reviews
 

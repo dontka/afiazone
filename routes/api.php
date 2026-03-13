@@ -35,6 +35,35 @@ return [
     ['method' => 'GET',  'path' => '/me',              'controller' => 'UserController@profile',        'middleware' => ['auth']],
     ['method' => 'PUT',  'path' => '/me',              'controller' => 'UserController@updateProfile',  'middleware' => ['auth']],
     ['method' => 'POST', 'path' => '/me/password',     'controller' => 'UserController@changePassword', 'middleware' => ['auth']],
+    ['method' => 'POST', 'path' => '/me/avatar',       'controller' => 'UserController@uploadAvatar',   'middleware' => ['auth']],
+    ['method' => 'GET',  'path' => '/users/{id}',      'controller' => 'UserController@show',           'middleware' => ['auth']],
+    ['method' => 'PUT',  'path' => '/users/{id}',      'controller' => 'UserController@update',         'middleware' => ['auth']],
+
+    // ── KYC (User) ─────────────────────────────────
+    ['method' => 'GET',  'path' => '/kyc',             'controller' => 'KycController@show',             'middleware' => ['auth']],
+    ['method' => 'POST', 'path' => '/kyc',             'controller' => 'KycController@submit',           'middleware' => ['auth']],
+    ['method' => 'POST', 'path' => '/kyc/documents',   'controller' => 'KycController@uploadDocument',   'middleware' => ['auth']],
+    ['method' => 'POST', 'path' => '/kyc/validate',    'controller' => 'KycController@validateDocuments','middleware' => ['auth']],
+
+    // ── KYC (Admin) ────────────────────────────────
+    ['method' => 'GET',  'path' => '/admin/kyc',              'controller' => 'KycController@adminList',         'middleware' => ['auth', 'rbac:admin,moderator']],
+    ['method' => 'GET',  'path' => '/admin/kyc/pending',      'controller' => 'KycController@pending',           'middleware' => ['auth', 'rbac:admin,moderator']],
+    ['method' => 'GET',  'path' => '/admin/kyc/{id}',         'controller' => 'KycController@adminShow',         'middleware' => ['auth', 'rbac:admin,moderator']],
+    ['method' => 'POST', 'path' => '/admin/kyc/{id}/approve', 'controller' => 'KycController@approve',           'middleware' => ['auth', 'rbac:admin,moderator']],
+    ['method' => 'POST', 'path' => '/admin/kyc/{id}/reject',  'controller' => 'KycController@reject',            'middleware' => ['auth', 'rbac:admin,moderator']],
+    ['method' => 'POST', 'path' => '/admin/kyc/{id}/request-revision', 'controller' => 'KycController@requestRevision', 'middleware' => ['auth', 'rbac:admin,moderator']],
+
+    // ── Merchants ──────────────────────────────────
+    ['method' => 'GET',  'path' => '/merchants/{id}',              'controller' => 'MerchantController@show'],
+    ['method' => 'GET',  'path' => '/me/merchant',                 'controller' => 'MerchantController@me',                  'middleware' => ['auth', 'rbac:merchant']],
+    ['method' => 'POST', 'path' => '/merchants',                   'controller' => 'MerchantController@register',            'middleware' => ['auth', 'rbac:customer']],
+    ['method' => 'PUT',  'path' => '/me/merchant',                 'controller' => 'MerchantController@updateProfile',       'middleware' => ['auth', 'rbac:merchant']],
+    ['method' => 'GET',  'path' => '/me/merchant/dashboard',       'controller' => 'MerchantController@dashboard',           'middleware' => ['auth', 'rbac:merchant']],
+    ['method' => 'GET',  'path' => '/me/merchant/tier',            'controller' => 'MerchantController@tierInfo',            'middleware' => ['auth', 'rbac:merchant']],
+    ['method' => 'POST', 'path' => '/merchants/{id}/shipping-info','controller' => 'MerchantController@updateShippingInfo',  'middleware' => ['auth', 'rbac:merchant,admin']],
+    ['method' => 'POST', 'path' => '/merchants/{id}/fees',         'controller' => 'MerchantController@updateFees',          'middleware' => ['auth', 'rbac:admin']],
+    ['method' => 'GET',  'path' => '/admin/merchants',             'controller' => 'MerchantController@adminList',           'middleware' => ['auth', 'rbac:admin']],
+    ['method' => 'PUT',  'path' => '/admin/merchants/{id}/status', 'controller' => 'MerchantController@updateStatus',        'middleware' => ['auth', 'rbac:admin']],
 
     // ── Products (public) ──────────────────────────
     ['method' => 'GET',  'path' => '/products',            'controller' => 'ProductController@index'],
@@ -64,12 +93,6 @@ return [
     ['method' => 'POST', 'path' => '/wallet/topup',        'controller' => 'WalletController@topup',        'middleware' => ['auth', 'verified']],
     ['method' => 'POST', 'path' => '/wallet/transfer',     'controller' => 'WalletController@transfer',     'middleware' => ['auth', 'verified']],
     ['method' => 'GET',  'path' => '/wallet/transactions', 'controller' => 'WalletController@transactions', 'middleware' => ['auth', 'verified']],
-
-    // ── KYC ────────────────────────────────────────
-    ['method' => 'GET',  'path' => '/kyc',            'controller' => 'KycController@show',    'middleware' => ['auth']],
-    ['method' => 'POST', 'path' => '/kyc',            'controller' => 'KycController@submit',  'middleware' => ['auth']],
-    ['method' => 'POST', 'path' => '/kyc/{id}/approve','controller' => 'KycController@approve', 'middleware' => ['auth']],
-    ['method' => 'POST', 'path' => '/kyc/{id}/reject', 'controller' => 'KycController@reject',  'middleware' => ['auth']],
 
     // ── Admin (HTML) ───────────────────────────────
     ['method' => 'GET',  'path' => '/admin',                   'controller' => 'Admin\AuthController@showLogin'],

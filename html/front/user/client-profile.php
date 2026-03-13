@@ -26,6 +26,7 @@ ob_start();
                         <button class="nav-link" id="v-pills-messages-tab" data-bs-toggle="pill" data-bs-target="#v-pills-messages" type="button" role="tab" aria-controls="v-pills-messages" aria-selected="false"><i class="fa-sharp fa-regular fa-tractor"></i> Track Your Order</button>
                         <button class="nav-link" id="v-pills-settings-tab" data-bs-toggle="pill" data-bs-target="#v-pills-settings" type="button" role="tab" aria-controls="v-pills-settings" aria-selected="false"><i class="fa-sharp fa-regular fa-location-dot"></i>My Address</button>
                         <button class="nav-link" id="v-pills-settingsa-tab" data-bs-toggle="pill" data-bs-target="#v-pills-settingsa" type="button" role="tab" aria-controls="v-pills-settingsa" aria-selected="false"><i class="fa-light fa-user"></i>Account Details</button>
+                        <button class="nav-link" id="v-pills-kyc-tab" data-bs-toggle="pill" data-bs-target="#v-pills-kyc" type="button" role="tab" aria-controls="v-pills-kyc" aria-selected="false"><i class="fa-light fa-id-card"></i>KYC Verification</button>
                         <button class="nav-link" id="v-pills-settingsb-tab" data-bs-toggle="pill" data-bs-target="#v-pills-settingsb" type="button" role="tab" aria-controls="v-pills-settingsb" aria-selected="false"><a href="login.php"><i class="fa-light fa-right-from-bracket"></i>log Out</a></button>
                     </div>
                 </div>
@@ -145,6 +146,86 @@ ob_start();
                                 <input type="password" placeholder="Confirm Password *">
                                 <button class="rts-btn btn-primary">Save Change</button>
                             </form>
+                        </div>
+                        <div class="tab-pane fade" id="v-pills-kyc" role="tabpanel" aria-labelledby="v-pills-kyc-tab" tabindex="0">
+                            <div class="kyc-verification-area">
+                                <h2 class="title">KYC Verification</h2>
+                                <p class="disc">Complete your Know Your Customer (KYC) verification to unlock full marketplace access and enable merchant features.</p>
+                                
+                                <div class="kyc-status-card" style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #629D23;">
+                                    <h5>Current Status: <span id="kyc-status" style="color: #629D23; font-weight: bold;">Pending</span></h5>
+                                    <p id="kyc-message" style="margin-top: 10px; color: #666;">Submit your documents to start the verification process.</p>
+                                </div>
+
+                                <form id="kyc-form" action="/kyc" method="POST" enctype="multipart/form-data" class="kyc-form">
+                                    <h4 style="margin-top: 30px; margin-bottom: 15px;">Personal Information</h4>
+                                    <div class="input-half-area">
+                                        <div class="single-input">
+                                            <label for="first-name">First Name</label>
+                                            <input type="text" id="first-name" name="first_name" placeholder="Your first name" required>
+                                        </div>
+                                        <div class="single-input">
+                                            <label for="last-name">Last Name</label>
+                                            <input type="text" id="last-name" name="last_name" placeholder="Your last name" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="input-half-area">
+                                        <div class="single-input">
+                                            <label for="dob">Date of Birth</label>
+                                            <input type="date" id="dob" name="date_of_birth" required>
+                                        </div>
+                                        <div class="single-input">
+                                            <label for="nationality">Nationality</label>
+                                            <input type="text" id="nationality" name="nationality" placeholder="Your nationality" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="single-input">
+                                        <label for="address">Residential Address</label>
+                                        <input type="text" id="address" name="address" placeholder="Full residential address" required>
+                                    </div>
+
+                                    <h4 style="margin-top: 30px; margin-bottom: 15px;">Document Upload</h4>
+                                    <p style="color: #666; margin-bottom: 15px;">Upload at least one valid identification document (ID Card, Passport, or Driver License)</p>
+
+                                    <div class="document-upload-area" style="border: 2px dashed #629D23; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+                                        <input type="file" id="document-upload" name="documents[]" accept=".jpg,.jpeg,.png,.pdf" multiple hidden>
+                                        <button type="button" onclick="document.getElementById('document-upload').click()" class="rts-btn btn-primary" style="background: #629D23;">
+                                            <i class="fa-light fa-cloud-arrow-up"></i> Choose Documents
+                                        </button>
+                                        <p style="margin-top: 10px; color: #999; font-size: 12px;">Supported: JPG, PNG, PDF (Max 10MB each)</p>
+                                        <div id="document-list" style="margin-top: 15px;"></div>
+                                    </div>
+
+                                    <div class="input-half-area">
+                                        <label style="display: flex; align-items: center;">
+                                            <input type="checkbox" name="agree_terms" required> I agree to the verification terms
+                                        </label>
+                                    </div>
+
+                                    <button type="submit" class="rts-btn btn-primary" style="margin-top: 20px;">Submit KYC Request</button>
+                                </form>
+
+                                <div id="kyc-documents-list" style="margin-top: 30px; display: none;">
+                                    <h4>Your Documents</h4>
+                                    <div class="table-responsive">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Document Type</th>
+                                                    <th>Uploaded Date</th>
+                                                    <th>Status</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="documents-tbody">
+                                                <!-- Filled by JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="tab-pane fade" id="v-pills-settingsb" role="tabpanel" aria-labelledby="v-pills-settingsb-tab" tabindex="0">...</div>
                     </div>
