@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Mon profil - AfiaZone';
+$pageTitle = 'Profil du client - AfiaZone';
 ob_start();
 ?>
 <div class="rts-navigation-area-breadcrumb">

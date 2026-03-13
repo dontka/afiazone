@@ -1751,7 +1751,7 @@ STRIPE_API_KEY=xxx (si applicable)
 - [ ] Upload S3
 - [ ] Retourner URL
 
-## E.2 Process KYC (Know Your Customer)
+## E.2 Process KYC (Know Your Customer) ne concerne pas le client
 
 ### E.2.1 – Submission KYC
 

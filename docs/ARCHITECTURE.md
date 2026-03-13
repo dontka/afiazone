@@ -1,9 +1,10 @@
 # 📐 Architecture — AfiaZone
 
-**Medical Marketplace avec E-Wallet Santé**  
-**Version** : 1.0  
-**Date** : Mars 2026  
-**Stack** : PHP 8.1+ (MVC Custom) | MySQL 8 | File-based Caching
+**Medical Marketplace avec E-Wallet Santé**
+**Version** : 1.0-Beta
+**Date** : Mars 2026 (Mise à jour dernière : 13 mars 2026)
+**Stack** : PHP 8.1+ (MVC Custom) | MySQL 8 | Redis/File-based Caching
+**Statut** : Phase D complétée (Authentification ✅)
 
 ---
 
@@ -21,7 +22,23 @@
 
 ---
 
-## Vue d'ensemble
+## 📊 Statut de progression du projet
+
+| Phase | Module | Statut | Implémentation |
+|-------|--------|--------|-----------------|
+| **D** | Authentification & Autorisation | ✅ **COMPLÉTÉ** | AuthController, AuthService, AuthMiddleware, RbacMiddleware |
+| **E** | Utilisateurs & KYC | 🟡 **EN COURS** | UserController, KycController, KycService (models prêts) |
+| **F** | Catalogue Produits | 🟡 **EN COURS** | ProductController, ProductService, ProductRepository (models prêts) |
+| **G** | Panier & Commandes | 🟡 **EN COURS** | CartController, OrderController, CartService, OrderService |
+| **H** | Livraison | 🟠 **PLANS** | DeliveryService (modèles prêts, intégration à faire) |
+| **I** | E-Wallet Santé | 🟠 **PLANS** | WalletController, WalletService, WalletRepository |
+| **J** | Prescriptions & Medical | 🟠 **PLANS** | Models créés (Prescription, MedicalRecord) |
+| **K** | Paiements & Mobile Money | 🟠 **PLANS** | PaymentService (structure de base) |
+| **L-O** | Admin, Analytics, Notifications, Sécurité | ⚫ **À FAIRE** | Partiellement implémentés (Admin, Logging) |
+
+**Légende** : ✅ Complété | 🟡 En cours | 🟠 Planifié | ⚫ À faire
+
+---
 
 **AfiaZone** est une plateforme de marketplace médicale avec un système d'e-wallet intégré, conçue pour la région d'Afrique centrale (RDC).
 
@@ -29,7 +46,7 @@
 
 Ce projet est une **API REST pure en PHP pur** :
 - ✅ **Pas de framework** (Laravel, Symfony, etc.)
-- ✅ **Pas de template engine** (Blade, Twig, etc.)  
+- ✅ **Pas de template engine** (Blade, Twig, etc.)
 - ✅ **Pas de base de données ORM** (Eloquent, Doctrine, etc.)
 - ✅ **Réponses JSON uniquement** - pas de rendu HTML
 - ✅ **MVC personnalisé** léger et contrôlé
@@ -37,6 +54,40 @@ Ce projet est une **API REST pure en PHP pur** :
 - ✅ **Dépendances minimales** via Composer
 
 Les frontend (web, mobile) consomment cette API en tant que clients HTTP.
+
+---
+
+### 🚀 Quick Start - État actuel (13 mars 2026)
+
+**Qu'est-ce qui marche** :
+- ✅ Authentification JWT/Session (login, register, logout)
+- ✅ RBAC (Role-Based Access Control)
+- ✅ Middleware de sécurité (Auth, RBAC, CORS, Rate Limit, Logging)
+- ✅ Modèles & bases de données pour tous les modules
+- ✅ Structure de base pour UserController, ProductController, CartController, etc.
+- ✅ Exception handling & request validation
+
+**Comment tester** :
+```bash
+# 1. Démarrer le serveur
+php -S localhost:8000
+
+# 2. Tester authentification
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password"}'
+
+# 3. Utiliser le JWT retourné pour les requêtes sécurisées
+curl -H "Authorization: Bearer <JWT_TOKEN>" http://localhost:8000/api/user/profile
+```
+
+**Qu'il faut faire nextpour débloquer les phases suivantes** :
+- [ ] Terminer endpoints KYC (Phase E)
+- [ ] Terminer endpoints Produits avec search (Phase F)
+- [ ] Intégrer panier & commandes (Phase G)
+- [ ] Ajouter endpoints livraison (Phase H)
+
+---
 
 ### Elle permet :
 
@@ -303,9 +354,16 @@ afiazone/
 
 ## Modules métier
 
-### 1. Module Authentification & Autorisation (Phase D)
+## Modules métier
 
-**Responsabilités** :
+### ✅ 1. Module Authentification & Autorisation (Phase D) — COMPLÉTÉ
+
+**Statut** : Complètement implémenté
+**Fichiers** :
+- `AuthController.php` & `AdminAuthController.php`
+- `AuthService.php`
+- `AuthMiddleware.php` & `RbacMiddleware.php`
+- Models: `User.php`, `Role.php`, `Permission.php`, `Token.php`
 - Inscription/Login via email ou phone
 - Vérification email & OTP
 - Reset de mot de passe
@@ -327,7 +385,19 @@ afiazone/
 
 ---
 
-### 2. Module Utilisateurs & KYC (Phase E)
+### 🟡 2. Module Utilisateurs & KYC (Phase E) — EN COURS
+
+**Statut** : Implémentation en cours
+**Fichiers implémentés** :
+- `UserController.php` & `KycController.php`
+- `KycService.php`
+- Models: `UserProfile.php`, `KycSubmission.php`, `KycDocument.php`, `Merchant.php`, `MerchantStock.php`
+- `UserValidator.php`
+
+**À faire** :
+- Endpoints KYC complets
+- Workflow approbation KYC
+- Gestion tiers marchands
 
 **Responsabilités** :
 - Gestion profils utilisateurs
@@ -348,7 +418,20 @@ afiazone/
 
 ---
 
-### 3. Module Catalogue Produits (Phase F)
+### 🟡 3. Module Catalogue Produits (Phase F) — EN COURS
+
+**Statut** : Implémentation en cours
+**Fichiers implémentés** :
+- `ProductController.php`
+- `ProductService.php` & `ProductRepository.php`
+- Models: `Product.php`, `ProductCategory.php`, `ProductImage.php`, `ProductVariant.php`, `ProductAttribute.php`, `ProductReview.php`
+- `ProductValidator.php`
+
+**À faire** :
+- Endpoints CRUD complets
+- Recherche FULLTEXT
+- Gestion variants & attributs
+- Images produits (S3)
 
 **Responsabilités** :
 - Gestion produits (création, édition, suppression)
@@ -373,7 +456,21 @@ afiazone/
 
 ---
 
-### 4. Module Panier & Commandes (Phase G)
+### 🟡 4. Module Panier & Commandes (Phase G) — EN COURS
+
+**Statut** : Implémentation en cours
+**Fichiers implémentés** :
+- `CartController.php` & `OrderController.php`
+- `CartService.php` & `OrderService.php`
+- `OrderRepository.php`
+- Models: `ShoppingCart.php`, `CartItem.php`, `Order.php`, `OrderItem.php`, `OrderStatusLog.php`
+- `OrderValidator.php`
+
+**À faire** :
+- Endpoints panier complets
+- Création commandes
+- Statuts & workflow
+- Remises & coupons
 
 **Responsabilités** :
 - Gestion panier (add/remove/update)
@@ -397,7 +494,18 @@ afiazone/
 
 ---
 
-### 5. Module Livraison (Phase H)
+### 🟠 5. Module Livraison (Phase H) — PLANIFIÉ
+
+**Statut** : Modèles créés, implémentation à planifier
+**Fichiers implémentés** :
+- `DeliveryService.php`
+- Models: `DeliveryPersonnel.php`, `Shipment.php`, `ShipmentTrackingLog.php`
+
+**À faire** :
+- Controller & endpoints livraison
+- Integration tracking GPS
+- Statuts & workflow
+- Confirmation livraison
 
 **Responsabilités** :
 - Gestion partenaires logistiques
@@ -419,7 +527,20 @@ afiazone/
 
 ---
 
-### 6. Module E-Wallet Santé (Phase I)
+### 🟠 6. Module E-Wallet Santé (Phase I) — PLANIFIÉ
+
+**Statut** : Modèles & services de base créés
+**Fichiers implémentés** :
+- `WalletController.php`
+- `WalletService.php` & `WalletRepository.php`
+- Models: `Wallet.php`, `WalletTransaction.php`, `WalletReservation.php`
+- `WalletValidator.php`
+
+**À faire** :
+- Endpoints wallet complets
+- Top-up (card/mobile money)
+- Réservations & débits
+- Historique & audit
 
 **Responsabilités** :
 - Création wallets utilisateurs
@@ -448,7 +569,17 @@ afiazone/
 
 ---
 
-### 7. Module Prescriptions & Dossier Médical (Phase J)
+### 🟠 7. Module Prescriptions & Dossier Médical (Phase J) — PLANIFIÉ
+
+**Statut** : Modèles créés, implémentation à planifier
+**Fichiers implémentés** :
+- Models: `Prescription.php`, `MedicalRecord.php`
+
+**À faire** :
+- Controller & Service
+- Upload & vérification prescriptions
+- EMR (dossier médical)
+- Partage d'accès & consultations
 
 **Responsabilités** :
 - Upload & vérification prescriptions
@@ -469,193 +600,138 @@ afiazone/
 
 ---
 
-### 8. Module Paiements & Mobile Money (Phase K)
+### 🟠 8. Module Paiements & Mobile Money (Phase K) — PLANIFIÉ
 
-**Responsabilités** :
-- Intégration passerelles paiement
-- Paiement cash on delivery
-- Paiement card (Stripe, etc.)
+**Statut** : Service de base créé, implémentation à planifier
+**Fichiers implémentés** :
+- `PaymentService.php`
+- Models: `PaymentTransaction.php`
+
+**À faire** :
+- Controller & endpoints paiement
+- Intégration passerelles
 - Mobile money (Airtel, Vodacom, Orange)
 - Refunds & disputes
-- Réconciliation paiements
-
-**Tables clés** :
-- `user_payment_methods` — Méthodes de paiement
-- `payment_transactions` — Transactions paiement
-- `payment_disputes` — Litiges paiement
-
-**Services** :
-- `PaymentService` — Orchestration paiement
-- `MobileMoneyService` — Intégration opérateurs
-- `RefundService` — Gestion remboursements
 
 ---
 
-### 9. Module Administration & Modération (Phase L)
+### ⚫ 9. Module Administration & Modération (Phase L) — À FAIRE
 
-**Responsabilités** :
-- Dashboard admin
-- Gestion marchands (suspension, ban)
+**Statut** : Controller admin créé, fonctionnalités à développer
+**Fichiers implémentés** :
+- `AdminAuthController.php` & `AdminDashboardController.php`
+- `LoggingMiddleware.php`
+
+**À faire** :
+- Dashboard admin complet
+- Gestion utilisateurs & marchands
 - Modération contenu
-- Gestion utilisateurs
-- Analytics plateforme
 - Paramètres système
 
-**Permissions** :
-- Admin.Dashboard
-- Admin.Users.Manage
-- Admin.Merchants.Manage
-- Admin.Moderation
-- Admin.Settings
-
 ---
 
-### 10. Module Statistiques & Analytics (Phase M)
+### ⚫ 10-11. Analytics, Notifications, Emails (Phases M-N) — À FAIRE
 
-**Responsabilités** :
-- Dashboards (sales, users, orders)
-- Reports générés
-- Métriques clés (KPIs)
-- Données temps réel vs historiques
-
-**Services** :
-- `AnalyticsService` — Calcul KPIs
-- `ReportService` — Génération rapports
-
----
-
-### 11. Module Notifications & Emails (Phase N)
-
-**Responsabilités** :
-- Notifications en temps réel (WebSocket/Server-Sent Events)
+**À faire** :
+- Controllers & Services pour analytics
+- Notifications en temps réel (WebSocket/SSE)
+- Système queue asynchrone
 - Emails transactionnels
-- SMS (optionnel)
-- Système de queue asynchrone
-
-**Infrastructure** :
-- Redis Pub/Sub — Broadcasting notifications
-- Queue job — Traitement emails asynchrone
-- Mailhog/SendGrid — Service email
 
 ---
 
-### 12. Sécurité & Conformité (Phase O)
+### ⚫ 12-16. Blog, Ads, API Tierces, i18n, Autres (Phases S-V) — À FAIRE
 
-**Responsabilités** :
-- HTTPS/TLS obligatoire
-- CSRF tokens
-- Input validation & sanitization
-- SQL injection prevention (prepared statements)
-- XSS prevention (output encoding)
-- Rate limiting
-- CORS policy
-- Data encryption (sensibles)
-- RGPD / Conformité locale RDC
-- Audit logs
-
-**Middleware & Services** :
-- `CsrfMiddleware` — CSRF protection
-- `RateLimitMiddleware` — Rate limiting
-- `EncryptionService` — Chiffrement données
+**À faire** :
+- Module Blog & CMS
+- Système de publicités in-app
+- API tierces & webhooks
+- Internationalisation (i18n)
+- Autres modules futurs
 
 ---
 
-### 13. Module Blog & Gestion de Contenu (Phase S)
+## État des implémentations techniques
 
-**Responsabilités** :
-- Publication d'articles (santé, bien-être, actualités médicales)
-- Catégorisation & tagging d'articles
-- Commentaires imbriqués avec modération
-- SEO (meta_title, meta_description, slug)
-- Planification de publications
-- Statistiques (vues, articles populaires)
+### ✅ Implémentés
 
-**Tables clés** :
-- `blog_categories` — Catégories de blog (hiérarchiques)
-- `blog_posts` — Articles de blog
-- `blog_tags` — Tags
-- `blog_post_tags` — Pivot article↔tag
-- `blog_comments` — Commentaires (imbriqués)
+**Controllers** (9 fichiers)
+- `AuthController.php` — Authentification complète
+- `AdminAuthController.php` — Auth admin
+- `UserController.php` — Gestion utilisateurs
+- `KycController.php` — KYC
+- `ProductController.php` — Produits
+- `CartController.php` — Panier
+- `OrderController.php` — Commandes
+- `WalletController.php` — Wallet
+- `HealthController.php` — Health check
 
-**Controllers/Services** :
-- `BlogController` → `BlogService`
-- `CommentService` — Gestion commentaires
+**Services** (9 fichiers)
+- `AuthService.php` — Auth complet
+- `UserService.php` — Profils users
+- `KycService.php` — KYC workflow
+- `ProductService.php` — Produits
+- `CartService.php` — Panier
+- `OrderService.php` — Commandes
+- `WalletService.php` — Wallet
+- `PaymentService.php` — Base paiements
+- `DeliveryService.php` — Base livraison
 
----
+**Models** (31 fichiers)
+- Auth: `User.php`, `Role.php`, `Permission.php`, `Token.php`
+- Users: `UserProfile.php`
+- KYC: `KycSubmission.php`, `KycDocument.php`, `Merchant.php`, `MerchantStock.php`
+- Products: `Product.php`, `ProductCategory.php`, `ProductImage.php`, `ProductVariant.php`, `ProductAttribute.php`, `ProductReview.php`
+- Cart/Order: `ShoppingCart.php`, `CartItem.php`, `Order.php`, `OrderItem.php`, `OrderStatusLog.php`
+- Wallet: `Wallet.php`, `WalletTransaction.php`, `WalletReservation.php`
+- Delivery: `DeliveryPersonnel.php`, `Shipment.php`, `ShipmentTrackingLog.php`
+- Payments: `PaymentTransaction.php`
+- Medical: `Prescription.php`, `MedicalRecord.php`
+- Notifications: `Notification.php`
 
-### 14. Module Publicité In-App (Phase T)
+**Repositories** (5 fichiers)
+- `UserRepository.php` — Users
+- `ProductRepository.php` — Products
+- `OrderRepository.php` — Orders
+- `WalletRepository.php` — Wallets
+- `BaseRepository.php` — Base class
 
-**Responsabilités** :
-- Gestion des campagnes publicitaires (marchands)
-- Emplacements prédéfinis (banner, sidebar, featured_product, etc.)
-- Diffusion basée sur ciblage & budget
-- Tracking impressions & clics
-- Facturation & reporting
-- Protection anti-fraude (déduplification, rate limiting)
+**Validators** (5 fichiers)
+- `UserValidator.php`
+- `ProductValidator.php`
+- `OrderValidator.php`
+- `WalletValidator.php`
+- `Validator.php` — Base class
 
-**Tables clés** :
-- `ad_campaigns` — Campagnes publicitaires
-- `ad_placements` — Emplacements (homepage_banner, sidebar, etc.)
-- `ad_campaign_placements` — Pivot campagne↔emplacement
-- `ad_impressions` — Impressions trackées
-- `ad_clicks` — Clics trackés
+**Middleware** (7 fichiers)
+- `AuthMiddleware.php` — JWT/Session validation
+- `RbacMiddleware.php` — Permission checking
+- `RateLimitMiddleware.php` — Rate limiting
+- `CorsMiddleware.php` — CORS policy
+- `LoggingMiddleware.php` — Audit logging
+- `VerifiedMiddleware.php` — Email verification
+- `Middleware.php` — Base class
 
-**Controllers/Services** :
-- `AdController` → `AdService`
-- `AdTrackingService` — Impressions, clics, stats
+**Exceptions** (6 fichiers)
+- `HttpException.php`, `ValidationException.php`, `UnauthorizedException.php`, `ForbiddenException.php`, `NotFoundException.php`, `Exceptions.php`
 
----
-
-### 15. Module API Tierces Parties (Phase U)
-
-**Responsabilités** :
-- Gestion des clients API (clés, secrets, permissions)
-- Authentification via API key / Bearer token
-- Rate limiting par client
-- Webhooks sortants (order.created, payment.completed, etc.)
-- Signature HMAC-SHA256 des webhooks
-- Documentation OpenAPI / Swagger
-- Support environnements sandbox & production
-
-**Tables clés** :
-- `api_clients` — Clients API tiers
-- `api_client_permissions` — Permissions granulaires
-- `api_webhooks` — Webhooks enregistrés
-- `api_webhook_logs` — Historique livraisons webhook
-
-**Middleware/Services** :
-- `ApiKeyMiddleware` — Validation clé API
-- `WebhookService` — Envoi & retry webhooks
-- `ApiClientService` — Gestion clients
-
----
-
-### 16. Module Internationalisation / i18n (Phase V)
-
-**Responsabilités** :
-- Support multilingue : Français (défaut), Anglais, Swahili
-- Architecture extensible (ajouter des langues facilement)
-- Clés de traduction hiérarchiques (namespace.group.key)
-- Détection langue (URL param → Accept-Language → préférence user → défaut)
-- Fallback vers langue par défaut si traduction absente
-- Formatage localisé (dates, prix, nombres)
-- Traduction contenu dynamique (catégories, articles blog)
-- Cache des traductions (file-based)
-
-**Tables clés** :
-- `languages` — Langues supportées (fr, en, sw...)
-- `translations` — Clés de traduction
-- `user_profiles.preferred_locale` — Préférence utilisateur
-
-**Middleware/Services** :
-- `LocaleMiddleware` — Détection & application de la langue
-- `TranslationService` — Résolution des traductions
-- Helper `__('key')` — Fonction de traduction
-- Helper `__n('key', $count)` — Pluralisation
+**Console** (4 fichiers)
+- `MigrateCommand.php`, `RollbackCommand.php`, `SeedCommand.php`, `Command.php`
 
 ---
 
-## Flux de données
+### 🟠 En préparation / À faire
+
+**Futures implémentations** :
+- Blog & CMS (`BlogController`, `BlogService`, `BlogModel`)
+- Publicité in-app (`AdController`, `AdService`)
+- API Tierces Parties & Webhooks
+- Internationalisation (i18n/Locales)
+- Analytics & Dashboards (`AnalyticsService`)
+- Notifications & Emails (`NotificationService`)
+- S3 Upload Manager pour fichiers
+
+---
 
 ### Flux 1 : Authentification
 
@@ -1027,28 +1103,34 @@ main (production)
 
 ## Roadmap Phases
 
-| Phase | Focus | Durée |
-|-------|-------|-------|
-| **A** | Préparation & specs | 1-2 sem |
-| **B** | Architecture & BDD | 1 sem |
-| **C** | Infrastructure & Boilerplate | 2 sem |
-| **D** | Authentification & Autorisations | 2 sem |
-| **E** | Module Utilisateurs & KYC | 2 sem |
-| **F** | Catalogue Produits | 2 sem |
-| **G** | Panier & Commandes | 2 sem |
-| **H** | Livraison & Livreurs | 2 sem |
-| **I** | Wallet Santé | 2 sem |
-| **J** | Prescriptions & Dossier Médical | 2 sem |
-| **K** | Paiements & Mobile Money | 2 sem |
-| **L** | Administration & Modération | 1 sem |
-| **M** | Statistiques & Analytics | 1 sem |
-| **N** | Notifications & Emails | 1 sem |
-| **O** | Sécurité & Conformité | 1 sem |
-| **P** | Tests & QA | 2 sem |
-| **Q** | Déploiement & Monitoring | 1 sem |
-| **R** | Post-lancement & Optimisation | Ongoing |
+| Phase | Focus | Statut | Fin estimée |
+|-------|-------|--------|-------------|
+| **A** | Préparation & specs | ✅ Fait | - |
+| **B** | Architecture & BDD | ✅ Fait | - |
+| **C** | Infrastructure & Boilerplate | ✅ Fait (Laragon) | - |
+| **D** | Authentification & Autorisations | ✅ **COMPLÉTÉ** | 13 mars 2026 |
+| **E** | Module Utilisateurs & KYC | 🟡 En cours | TBD |
+| **F** | Catalogue Produits | 🟡 En cours | TBD |
+| **G** | Panier & Commandes | 🟡 En cours | TBD |
+| **H** | Livraison & Livreurs | 🟠 Planifié | TBD |
+| **I** | Wallet Santé | 🟠 Planifié | TBD |
+| **J** | Prescriptions & Dossier Médical | 🟠 Planifié | TBD |
+| **K** | Paiements & Mobile Money | 🟠 Planifié | TBD |
+| **L** | Administration & Modération | ⚫ À faire | TBD |
+| **M** | Statistiques & Analytics | ⚫ À faire | TBD |
+| **N** | Notifications & Emails | ⚫ À faire | TBD |
+| **O** | Sécurité & Conformité | ⚫ À faire | TBD |
+| **P** | Tests & QA | ⚫ À faire | TBD |
+| **Q** | Déploiement & Monitoring | ⚫ À faire | TBD |
+| **R** | Post-lancement & Optimisation | ⚫ À faire | Ongoing |
+| **S-V** | Blog, Ads, API, i18n, Extras | ⚫ Futures phases | TBD |
 
-**Total estimé** : 16–20 semaines
+**Progression globale** : Phase D/16 complétée (6% du plan initial) | Infrastructure & Auth solides
+
+**Prochaines étapes prioritaires** :
+1. Terminer Phase E (KYC)
+2. Terminer Phase F (Produits)
+3. Terminer Phase G (Commandes)
 
 ---
 
@@ -1059,5 +1141,6 @@ main (production)
 
 ---
 
-**Dernière mise à jour** : Mars 2026  
+**Dernière mise à jour** : 13 mars 2026 (14:30)
 **Mainteneur** : équipe dev @AfiaZone
+**Branch** : main | **Commit** : 132f76c (Auth systeme finish)
