@@ -115,7 +115,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
-            email: document.getElementById('email').value,
+            identifier: document.getElementById('identifier').value,
             password: document.getElementById('password').value
         })
     })
@@ -187,8 +187,8 @@ ob_start();
                         <div id="login-success" class="alert alert-success" style="display:none;"></div>
                         <form id="loginForm" class="registration-form">
                             <div class="input-wrapper">
-                                <label for="email">Email*</label>
-                                <input type="email" id="email" name="email" required>
+                                <label for="identifier">Email, Phone, Username or ID*</label>
+                                <input type="text" id="identifier" name="identifier" placeholder="Enter email, phone number, username, or unique ID" required>
                             </div>
                             <div class="input-wrapper">
                                 <label for="password">Password*</label>

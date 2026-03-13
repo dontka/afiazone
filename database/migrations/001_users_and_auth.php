@@ -13,6 +13,8 @@ return [
               id BIGINT AUTO_INCREMENT PRIMARY KEY,
               email VARCHAR(255) UNIQUE NOT NULL,
               phone VARCHAR(20) UNIQUE,
+              username VARCHAR(100) UNIQUE,
+              unique_id VARCHAR(255) UNIQUE NOT NULL,
               password_hash VARCHAR(255),
               first_name VARCHAR(100),
               last_name VARCHAR(100),
@@ -24,6 +26,8 @@ return [
               updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
               INDEX idx_email (email),
               INDEX idx_phone (phone),
+              INDEX idx_username (username),
+              INDEX idx_unique_id (unique_id),
               INDEX idx_status (status)
             ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
         ");

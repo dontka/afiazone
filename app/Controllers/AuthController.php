@@ -51,10 +51,21 @@ class AuthController extends BaseController
     public function login(): void
     {
         try {
-            $result = $this->authService->login(
-                (string) $this->getData('email'),
-                (string) $this->getData('password')
-            );
+            // Support both 'email' (legacy) and 'identifier' (new) parameter names
+            $identifier = (string) ($this->getData('identifier') ?? $this->getData('email') ?? '');
+            $password = (string) $this->getData('password');
+
+            if (empty($identifier)) {
+                $this->errorResponse('Identifier or email is required', 422);
+                return;
+            }
+
+            if (empty($password)) {
+                $this->errorResponse('Password is required', 422);
+                return;
+            }
+
+            $result = $this->authService->login($identifier, $password);
 
             $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
                     || (($_SERVER['SERVER_PORT'] ?? 80) == 443);

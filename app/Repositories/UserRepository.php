@@ -25,6 +25,45 @@ class UserRepository extends BaseRepository
         return $this->findBy('phone', $phone);
     }
 
+    public function findByUsername(string $username): ?User
+    {
+        /** @var ?User */
+        return $this->findBy('username', $username);
+    }
+
+    public function findByUniqueId(string $uniqueId): ?User
+    {
+        /** @var ?User */
+        return $this->findBy('unique_id', $uniqueId);
+    }
+
+    /**
+     * Find user by any identifier (email, phone, username, or unique_id)
+     */
+    public function findByIdentifier(string $identifier): ?User
+    {
+        // Try by email first
+        $user = $this->findByEmail($identifier);
+        if ($user) {
+            return $user;
+        }
+
+        // Try by phone
+        $user = $this->findByPhone($identifier);
+        if ($user) {
+            return $user;
+        }
+
+        // Try by username
+        $user = $this->findByUsername($identifier);
+        if ($user) {
+            return $user;
+        }
+
+        // Try by unique_id
+        return $this->findByUniqueId($identifier);
+    }
+
     public function findActive(): array
     {
         return $this->query()->where('status', 'active')->get();
@@ -47,5 +86,15 @@ class UserRepository extends BaseRepository
     public function phoneExists(string $phone): bool
     {
         return $this->exists('phone', $phone);
+    }
+
+    public function usernameExists(string $username): bool
+    {
+        return $this->exists('username', $username);
+    }
+
+    public function uniqueIdExists(string $uniqueId): bool
+    {
+        return $this->exists('unique_id', $uniqueId);
     }
 }

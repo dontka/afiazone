@@ -50,9 +50,15 @@ class AuthService extends BaseService
             $this->throwIfErrors(['phone' => 'Phone number already registered']);
         }
 
+        if (!empty($data['username']) && $this->userRepo->usernameExists($data['username'])) {
+            $this->throwIfErrors(['username' => 'Username already taken']);
+        }
+
         $user = User::create([
             'email' => $data['email'],
             'phone' => $data['phone'] ?? null,
+            'username' => $data['username'] ?? null,
+            'unique_id' => User::generateUniqueId(),
             'password_hash' => password_hash($data['password'], PASSWORD_BCRYPT),
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
@@ -78,9 +84,14 @@ class AuthService extends BaseService
         ];
     }
 
-    public function login(string $email, string $password): array
+    /**
+     * Login with any identifier: email, phone, username, or unique_id
+     * @param string $identifier Can be email, phone, username, or unique_id
+     * @param string $password User password
+     */
+    public function login(string $identifier, string $password): array
     {
-        $user = $this->userRepo->findByEmail($email);
+        $user = $this->userRepo->findByIdentifier($identifier);
 
         if (!$user || !password_verify($password, $user->password_hash ?? '')) {
             throw new \App\Exceptions\UnauthorizedException('Invalid credentials');

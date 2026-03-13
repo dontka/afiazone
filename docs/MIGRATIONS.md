@@ -77,8 +77,7 @@ return [
 | 016 | `016_api_clients_webhooks.php` | API Tierces | `api_clients`, `api_client_permissions`, `api_webhooks`, `api_webhook_logs` |
 | 017 | `017_i18n.php` | Internationalisation | `languages`, `translations` |
 | 018 | `018_seed_data.php` | Données de base | Rôles, permissions, catégories, langues, placements, etc. |
-
-**Total : 74 tables + données de base**
+| 019 | `019_add_multi_auth_fields.php` | Multi-Auth | Ajoute `username` et `unique_id` à `users` |
 
 ## Fonctionnement interne
 

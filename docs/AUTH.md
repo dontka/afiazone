@@ -105,20 +105,39 @@ Content-Type: application/json
   "password": "minuit2024!",
   "first_name": "Marie",
   "last_name": "Curie",
-  "phone": "+33612345678"
+  "phone": "+33612345678",
+  "username": "marie.curie"
 }
 ```
 
 **Réponse 201 :**
 ```json
 {
-  "user": { "id": 10, "email": "...", "roles": ["customer"], ... },
+  "user": { 
+    "id": 10, 
+    "email": "user@example.com",
+    "phone": "+33612345678",
+    "username": "marie.curie",
+    "unique_id": "550e8400-e29b-41d4-a716-446655440000",
+    "roles": ["customer"], 
+    ... 
+  },
   "token": "<JWT>"
 }
 ```
 
-- Valide : `email` (unique), `password` (min 8 car.), `first_name`, `last_name`
+**Règles de validation :**
+- `email` : Requis, format email valide, unique
+- `password` : Requis, minimum 8 caractères
+- `first_name` : Requis
+- `last_name` : Requis
+- `phone` : Optionnel, doit être unique s'il est fourni
+- `username` : Optionnel, doit être unique s'il est fourni
+- `unique_id` : Généré automatiquement (UUID v4), jamais modifiable
+
+**Comportement :**
 - Crée l'utilisateur avec `status = 'pending_verification'`
+- Génère un UUID v4 unique immutable
 - Assigne le rôle `customer`
 - Envoie un email de vérification
 - Retourne immédiatement un JWT (accès limité jusqu'à vérification)
@@ -133,9 +152,31 @@ Content-Type: application/json
 ```
 
 **Corps :**
+
+Les utilisateurs peuvent se connecter avec **4 types d'identifiants** :
+
 ```json
+// Option 1 : Email (legacy, toujours supporté)
 {
   "email": "user@example.com",
+  "password": "minuit2024!"
+}
+
+// Option 2 : Téléphone
+{
+  "identifier": "+33612345678",
+  "password": "minuit2024!"
+}
+
+// Option 3 : Nom d'utilisateur
+{
+  "identifier": "john.doe",
+  "password": "minuit2024!"
+}
+
+// Option 4 : ID unique (UUID)
+{
+  "identifier": "550e8400-e29b-41d4-a716-446655440000",
   "password": "minuit2024!"
 }
 ```
@@ -143,16 +184,36 @@ Content-Type: application/json
 **Réponse 200 :**
 ```json
 {
-  "user": { "id": 10, "roles": ["customer"], ... },
+  "user": { 
+    "id": 10, 
+    "email": "user@example.com",
+    "phone": "+33612345678",
+    "username": "john.doe",
+    "unique_id": "550e8400-e29b-41d4-a716-446655440000",
+    "roles": ["customer"], 
+    ... 
+  },
   "token": "<JWT>",
   "email_verified": true
 }
 ```
 
-- Lève `UnauthorizedException` → 401 si credentials invalides
+**Logique de recherche :**
+
+Lorsqu'un `identifier` est fourni, le système cherche l'utilisateur dans cet ordre :
+1. Email exact
+2. Téléphone exact
+3. Username exact
+4. Unique ID exact
+
+Si aucun n'est trouvé → `UnauthorizedException` (401)
+
+**Comportement :**
+- Lève `UnauthorizedException` → 401 si credentials invalides ou identifiant introuvable
 - Lève `ForbiddenException` → 403 si compte `banned`
 - Met à jour `last_login_at`
 - Définit aussi un cookie HttpOnly `auth_token` (en plus du JSON) pour les pages web protégées
+- **Backward compatible** : le paramètre `email` (legacy) continue de fonctionner
 
 ---
 
@@ -492,8 +553,8 @@ Fichier : `app/Services/AuthService.php`
 
 | Méthode | Signature | Description |
 |---------|-----------|-------------|
-| `register` | `(array $data): array` | Crée user, assigne rôle customer, envoie email vérif., retourne JWT |
-| `login` | `(string $email, string $password): array` | Vérifie credentials, retourne JWT + user |
+| `register` | `(array $data): array` | Crée user, génère unique_id, assigne rôle customer, envoie email vérif., retourne JWT |
+| `login` | `(string $identifier, string $password): array` | Accepte email/phone/username/unique_id, vérifie credentials, retourne JWT + user |
 | `logout` | `(string $token): void` | Blackliste le token JWT dans `tokens` |
 | `validateToken` | `(string $token): ?array` | Décode et valide, retourne payload ou null |
 | `refreshToken` | `(string $currentToken): ?string` | Génère nouveau JWT à partir d'un token valide |
@@ -641,14 +702,51 @@ Content-Security-Policy: default-src 'self'
 
 Créés par le seeder `001_UsersSeeder.php` :
 
-| Email | Mot de passe | Rôle(s) | Accès panel admin |
-|-------|-------------|---------|:-----------------:|
-| `admin@afiazone.com` | `Password123!` | admin | ✅ |
-| `moderator@afiazone.com` | `Password123!` | moderator | ✅ |
-| `pharma1@afiazone.com` | `Password123!` | merchant | ✅ (dashboard merchant) |
-| `client1@example.com` | `Password123!` | customer | ❌ |
-| `deliverer@afiazone.com` | `Password123!` | deliverer | ✅ (dashboard deliverer) |
-| `partner1@example.com` | `Password123!` | partner | ✅ (dashboard partner) |
+Tous les comptes utilisent le mot de passe : **`Password123!`**
+
+### Compte Admin
+
+| Email | Téléphone | Username | Role | Accès admin |
+|-------|-----------|----------|------|:-----------:|
+| `admin@afiazone.com` | `+243999000001` | `admin` | admin | ✅ |
+
+### Compte Modérateur
+
+| Email | Téléphone | Username | Role | Accès admin |
+|-------|-----------|----------|------|:-----------:|
+| `moderator@afiazone.com` | `+243999000002` | `moderator` | moderator | ✅ |
+
+### Comptes Marchands
+
+| Email | Téléphone | Username | Role | Accès admin |
+|-------|-----------|----------|------|:-----------:|
+| `pharma1@afiazone.com` | `+243999000003` | `pharma1` | merchant | ✅ (dashboard merchant) |
+| `pharma2@afiazone.com` | `+243999000004` | `pharma2` | merchant | ✅ (dashboard merchant) |
+| `pharma3@afiazone.com` | `+243999000005` | `pharma3` | merchant | ✅ (dashboard merchant) |
+
+### Comptes Clients
+
+| Email | Téléphone | Username | Role | Accès admin |
+|-------|-----------|----------|------|:-----------:|
+| `client1@example.com` | `+243999000006` | `sophie.k` | customer | ❌ |
+| `client2@example.com` | `+243999000007` | `david.m` | customer | ❌ |
+| `client3@example.com` | `+243999000008` | `amina.t` | customer | ❌ |
+| `client4@example.com` | `+243999000009` | `pierre.k` | customer | ❌ |
+| `client5@example.com` | `+243999000010` | `grace.n` | customer | ❌ |
+
+### Comptes Livreurs
+
+| Email | Téléphone | Username | Role | Accès admin |
+|-------|-----------|----------|------|:-----------:|
+| `livreur1@afiazone.com` | `+243999000011` | `jacques.kas` | deliverer | ✅ (dashboard deliverer) |
+| `livreur2@afiazone.com` | `+243999000012` | `emmanuel.m` | deliverer | ✅ (dashboard deliverer) |
+| `livreur3@afiazone.com` | `+243999000013` | `fidele.n` | deliverer | ✅ (dashboard deliverer) |
+
+### Compte Partenaire
+
+| Email | Téléphone | Username | Role | Accès admin |
+|-------|-----------|----------|------|:-----------:|
+| `partner1@example.com` | `+243999000014` | `sonas.assur` | partner | ✅ (dashboard partner) |
 
 ### Se connecter selon le rôle
 
@@ -700,10 +798,34 @@ Réponse attendue (enveloppe API) :
 **C) Connexion livreur (dashboard dédié)**
 
 1. Ouvrir `http://afiazone.test/admin/login`
-2. Se connecter avec `livreur1@afiazone.com` / `Password123!`
+2. Se connecter avec `livreur1@afiazone.com` / `Password123!` (ou phone, username, unique_id)
 3. Vérifier la redirection vers `/admin/dashboard/deliverer`
 
-> Liste complète des 14 comptes seedés : `docs/SEEDERS.md`.
+**D) Connexion via différents identifiants (même compte)**
+
+Tous ces identifiants se connectent au compte `admin@afiazone.com` :
+```bash
+# Via email
+curl -X POST http://afiazone.test/auth/login \
+  -d '{"email":"admin@afiazone.com","password":"Password123!"}'
+
+# Via téléphone
+curl -X POST http://afiazone.test/auth/login \
+  -d '{"identifier":"+243999000001","password":"Password123!"}'
+
+# Via username
+curl -X POST http://afiazone.test/auth/login \
+  -d '{"identifier":"admin","password":"Password123!"}'
+
+# Via unique_id
+curl -X POST http://afiazone.test/auth/login \
+  -d '{"identifier":"<uuid_du_compte>","password":"Password123!"}'
+```
+
+> **Docs supplémentaires** :
+> - Liste complète des 14 comptes seedés : `docs/SEEDERS.md`
+> - Système multi-auth détaillé : `docs/MULTI_AUTH.md`
+> - Guide démarrage rapide : `docs/QUICKSTART_MULTI_AUTH.md`
 
 ### Réinitialiser les comptes
 
@@ -719,12 +841,14 @@ php bin/seed.php 001
 
 | Fichier | Rôle |
 |---------|------|
-| `app/Services/AuthService.php` | Toute la logique auth (JWT, tokens, emails) |
-| `app/Controllers/AuthController.php` | API auth publique |
+| `app/Services/AuthService.php` | Toute la logique auth (JWT, tokens, emails, multi-identifiers) |
+| `app/Controllers/AuthController.php` | API auth publique (supporte email et identifier) |
 | `app/Controllers/Admin/AuthController.php` | Auth panel admin (HTML + cookies) |
 | `app/Middleware/AuthMiddleware.php` | Validation JWT sur routes protégées |
 | `app/Middleware/RbacMiddleware.php` | Contrôle d'accès par rôle |
-| `app/Models/User.php` | Méthodes `getRoleNames()`, `hasPermission()` |
+| `app/Models/User.php` | Méthodes `getRoleNames()`, `hasPermission()`, `findByUsername()`, `findByUniqueId()`, `generateUniqueId()` |
+| `app/Repositories/UserRepository.php` | Méthode `findByIdentifier()` pour recherche multi-identifiants |
 | `routes/api.php` | Définition des routes + middlewares |
 | `database/seeders/000_RolesPermissionsSeeder.php` | Données de référence RBAC |
-| `database/seeders/001_UsersSeeder.php` | Comptes de test |
+| `database/seeders/001_UsersSeeder.php` | Comptes de test avec phone, username, unique_id |
+| `database/migrations/019_add_multi_auth_fields.php` | Migration pour ajouter colonnes multi-auth |

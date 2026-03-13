@@ -12,6 +12,8 @@ class User extends BaseModel
     protected array $fillable = [
         'email',
         'phone',
+        'username',
+        'unique_id',
         'password_hash',
         'first_name',
         'last_name',
@@ -93,6 +95,32 @@ class User extends BaseModel
     public static function findByPhone(string $phone): ?self
     {
         return self::findBy('phone', $phone);
+    }
+
+    public static function findByUsername(string $username): ?self
+    {
+        return self::findBy('username', $username);
+    }
+
+    public static function findByUniqueId(string $uniqueId): ?self
+    {
+        return self::findBy('unique_id', $uniqueId);
+    }
+
+    /**
+     * Generate a unique ID for the user
+     * Uses UUID v4 format
+     */
+    public static function generateUniqueId(): string
+    {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
     }
 
     public function toArray(): array
