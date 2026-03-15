@@ -153,65 +153,66 @@ ob_start();
                                 <p class="disc">Complete your Know Your Customer (KYC) verification to unlock full marketplace access and enable merchant features.</p>
                                 
                                 <div class="kyc-status-card" style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #629D23;">
-                                    <h5>Current Status: <span id="kyc-status" style="color: #629D23; font-weight: bold;">Pending</span></h5>
-                                    <p id="kyc-message" style="margin-top: 10px; color: #666;">Submit your documents to start the verification process.</p>
+                                    <h5>Current Status: <span id="kyc-status" style="color: #629D23; font-weight: bold;">Loading...</span></h5>
+                                    <p id="kyc-message" style="margin-top: 10px; color: #666;">Loading KYC status...</p>
                                 </div>
 
-                                <form id="kyc-form" action="/kyc" method="POST" enctype="multipart/form-data" class="kyc-form">
-                                    <h4 style="margin-top: 30px; margin-bottom: 15px;">Personal Information</h4>
-                                    <div class="input-half-area">
-                                        <div class="single-input">
-                                            <label for="first-name">First Name</label>
-                                            <input type="text" id="first-name" name="first_name" placeholder="Your first name" required>
-                                        </div>
-                                        <div class="single-input">
-                                            <label for="last-name">Last Name</label>
-                                            <input type="text" id="last-name" name="last_name" placeholder="Your last name" required>
-                                        </div>
+                                <!-- Loading Spinner -->
+                                <div id="kyc-loading" style="text-align: center; padding: 40px;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
                                     </div>
+                                </div>
 
-                                    <div class="input-half-area">
-                                        <div class="single-input">
-                                            <label for="dob">Date of Birth</label>
-                                            <input type="date" id="dob" name="date_of_birth" required>
-                                        </div>
-                                        <div class="single-input">
-                                            <label for="nationality">Nationality</label>
-                                            <input type="text" id="nationality" name="nationality" placeholder="Your nationality" required>
-                                        </div>
-                                    </div>
+                                <!-- Document Upload Form -->
+                                <form id="kyc-upload-form" style="display: none;" enctype="multipart/form-data">
+                                    <h4 style="margin-top: 30px; margin-bottom: 15px;">Upload KYC Documents</h4>
+                                    <p style="color: #666; margin-bottom: 15px;">Upload valid identification documents (ID Card, Passport, Driver License, Proof of Address)</p>
 
                                     <div class="single-input">
-                                        <label for="address">Residential Address</label>
-                                        <input type="text" id="address" name="address" placeholder="Full residential address" required>
+                                        <label for="document-type">Document Type *</label>
+                                        <select id="document-type" name="document_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                            <option value="">Select Document Type</option>
+                                            <option value="id_card">ID Card/National ID</option>
+                                            <option value="passport">Passport</option>
+                                            <option value="driver_license">Driver License</option>
+                                            <option value="proof_of_address">Proof of Address</option>
+                                            <option value="business_license">Business License</option>
+                                        </select>
                                     </div>
 
-                                    <h4 style="margin-top: 30px; margin-bottom: 15px;">Document Upload</h4>
-                                    <p style="color: #666; margin-bottom: 15px;">Upload at least one valid identification document (ID Card, Passport, or Driver License)</p>
-
-                                    <div class="document-upload-area" style="border: 2px dashed #629D23; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
-                                        <input type="file" id="document-upload" name="documents[]" accept=".jpg,.jpeg,.png,.pdf" multiple hidden>
-                                        <button type="button" onclick="document.getElementById('document-upload').click()" class="rts-btn btn-primary" style="background: #629D23;">
-                                            <i class="fa-light fa-cloud-arrow-up"></i> Choose Documents
-                                        </button>
-                                        <p style="margin-top: 10px; color: #999; font-size: 12px;">Supported: JPG, PNG, PDF (Max 10MB each)</p>
-                                        <div id="document-list" style="margin-top: 15px;"></div>
+                                    <div class="document-upload-area" style="border: 2px dashed #629D23; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; margin-top: 20px; cursor: pointer;">
+                                        <input type="file" id="document-upload" name="document" accept=".jpg,.jpeg,.png,.pdf" hidden>
+                                        <div class="upload-prompt">
+                                            <i class="fa-light fa-cloud-arrow-up" style="font-size: 32px; color: #629D23;"></i>
+                                            <p style="margin-top: 10px; font-weight: 600;">Click to upload document</p>
+                                            <p style="color: #999; font-size: 12px;">or drag and drop<br>Supported: JPG, PNG, PDF (Max 5MB)</p>
+                                        </div>
+                                        <div id="file-preview" style="margin-top: 15px; display: none;"></div>
                                     </div>
 
-                                    <div class="input-half-area">
-                                        <label style="display: flex; align-items: center;">
-                                            <input type="checkbox" name="agree_terms" required> I agree to the verification terms
-                                        </label>
-                                    </div>
-
-                                    <button type="submit" class="rts-btn btn-primary" style="margin-top: 20px;">Submit KYC Request</button>
+                                    <button type="submit" id="upload-submit-btn" class="rts-btn btn-primary" style="width: 100%;">
+                                        <i class="fa-light fa-upload"></i> Upload Document
+                                    </button>
                                 </form>
 
+                                <!-- Approved Message -->
+                                <div id="kyc-approved" style="display: none;">
+                                    <div class="alert alert-success" style="padding: 20px; border-radius: 8px;">
+                                        <h5 style="color: #28a745; margin-bottom: 10px;">
+                                            <i class="fa-solid fa-circle-check"></i> KYC Verified!
+                                        </h5>
+                                        <p style="margin-bottom: 5px;">Your identity has been verified successfully. You can now enjoy all platform features.</p>
+                                        <p style="margin: 0; color: #666; font-size: 12px;">Verified on: <span id="verified-date"></span></p>
+                                    </div>
+                                </div>
+
+                                <!-- Documents List -->
                                 <div id="kyc-documents-list" style="margin-top: 30px; display: none;">
-                                    <h4>Your Documents</h4>
+                                    <h4>Your Uploaded Documents</h4>
                                     <div class="table-responsive">
-                                        <table class="table">
-                                            <thead>
+                                        <table class="table" style="margin-top: 15px;">
+                                            <thead style="background: #f8f9fa;">
                                                 <tr>
                                                     <th>Document Type</th>
                                                     <th>Uploaded Date</th>
@@ -227,6 +228,224 @@ ob_start();
                                 </div>
                             </div>
                         </div>
+
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // Load KYC status when tab is activated
+                            const kycTab = document.getElementById('v-pills-kyc-tab');
+                            if (kycTab) {
+                                kycTab.addEventListener('shown.bs.tab', loadKYCStatus);
+                            }
+
+                            // Setup drag-and-drop
+                            const uploadArea = document.querySelector('.document-upload-area');
+                            if (uploadArea) {
+                                uploadArea.addEventListener('click', () => document.getElementById('document-upload').click());
+                                setupDragDrop();
+                            }
+
+                            // File upload change
+                            const fileInput = document.getElementById('document-upload');
+                            if (fileInput) {
+                                fileInput.addEventListener('change', showFilePreview);
+                            }
+
+                            // Form submit
+                            const uploadForm = document.getElementById('kyc-upload-form');
+                            if (uploadForm) {
+                                uploadForm.addEventListener('submit', submitDocumentUpload);
+                            }
+                        });
+
+                        function loadKYCStatus() {
+                            const token = localStorage.getItem('auth_token');
+                            if (!token) {
+                                window.location.href = '/login';
+                                return;
+                            }
+
+                            fetch('/api/kyc', {
+                                method: 'GET',
+                                headers: {
+                                    'Authorization': 'Bearer ' + token,
+                                    'Content-Type': 'application/json'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                document.getElementById('kyc-loading').style.display = 'none';
+                                
+                                if (data.status === 'approved') {
+                                    showApprovedStatus(data);
+                                } else if (data.status === 'no_submission') {
+                                    showUploadForm();
+                                } else {
+                                    showDocumentsList(data);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                document.getElementById('kyc-loading').innerHTML = '<p style="color: red;">Error loading KYC status</p>';
+                            });
+                        }
+
+                        function showApprovedStatus(data) {
+                            document.getElementById('kyc-status').textContent = 'Verified ✓';
+                            document.getElementById('kyc-status').style.color = '#28a745';
+                            document.getElementById('kyc-message').textContent = 'Your KYC verification has been approved.';
+                            document.getElementById('kyc-approved').style.display = 'block';
+                            document.getElementById('verified-date').textContent = new Date(data.verified_at).toLocaleDateString();
+                        }
+
+                        function showUploadForm() {
+                            document.getElementById('kyc-status').textContent = 'Pending';
+                            document.getElementById('kyc-message').textContent = 'No documents submitted yet. Upload your documents to begin verification.';
+                            document.getElementById('kyc-upload-form').style.display = 'block';
+                        }
+
+                        function showDocumentsList(data) {
+                            document.getElementById('kyc-status').textContent = data.status === 'pending' ? 'Pending Review' : 'Revision Requested';
+                            document.getElementById('kyc-message').textContent = data.status === 'revision_requested' 
+                                ? 'Revision Requested: ' + (data.revision_reason || 'Please resubmit your documents')
+                                : 'Your documents are under review.';
+                            
+                            document.getElementById('kyc-upload-form').style.display = 'block';
+                            document.getElementById('kyc-documents-list').style.display = 'block';
+
+                            const tbody = document.getElementById('documents-tbody');
+                            tbody.innerHTML = (data.documents || []).map(doc => `
+                                <tr>
+                                    <td>${formatDocType(doc.document_type)}</td>
+                                    <td>${new Date(doc.uploaded_at).toLocaleDateString()}</td>
+                                    <td>
+                                        <span class="badge bg-${doc.verification_status === 'verified' ? 'success' : doc.verification_status === 'rejected' ? 'danger' : 'warning'}">
+                                            ${doc.verification_status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="${doc.file_url}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
+                                </tr>
+                            `).join('');
+                        }
+
+                        function setupDragDrop() {
+                            const uploadArea = document.querySelector('.document-upload-area');
+                            const fileInput = document.getElementById('document-upload');
+
+                            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                                uploadArea.addEventListener(eventName, preventDefaults, false);
+                            });
+
+                            function preventDefaults(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                            }
+
+                            ['dragenter', 'dragover'].forEach(eventName => {
+                                uploadArea.addEventListener(eventName, () => {
+                                    uploadArea.style.backgroundColor = '#f0f8ff';
+                                });
+                            });
+
+                            ['dragleave', 'drop'].forEach(eventName => {
+                                uploadArea.addEventListener(eventName, () => {
+                                    uploadArea.style.backgroundColor = 'transparent';
+                                });
+                            });
+
+                            uploadArea.addEventListener('drop', (e) => {
+                                const dt = e.dataTransfer;
+                                fileInput.files = dt.files;
+                                showFilePreview();
+                            });
+                        }
+
+                        function showFilePreview() {
+                            const fileInput = document.getElementById('document-upload');
+                            const preview = document.getElementById('file-preview');
+                            const prompt = document.querySelector('.upload-prompt');
+                            const file = fileInput.files[0];
+
+                            if (!file) {
+                                preview.style.display = 'none';
+                                prompt.style.display = 'block';
+                                return;
+                            }
+
+                            prompt.style.display = 'none';
+                            preview.style.display = 'block';
+
+                            if (file.type.startsWith('image/')) {
+                                const reader = new FileReader();
+                                reader.onload = (e) => {
+                                    preview.innerHTML = `<img src="${e.target.result}" style="max-width: 150px; max-height: 150px; border-radius: 4px;">`;
+                                };
+                                reader.readAsDataURL(file);
+                            } else {
+                                preview.innerHTML = `<p><i class="fa-light fa-file"></i> ${file.name}</p>`;
+                            }
+                        }
+
+                        function submitDocumentUpload(e) {
+                            e.preventDefault();
+
+                            const token = localStorage.getItem('auth_token');
+                            const documentType = document.getElementById('document-type').value;
+                            const fileInput = document.getElementById('document-upload');
+                            const file = fileInput.files[0];
+
+                            if (!documentType || !file) {
+                                alert('Please select document type and file');
+                                return;
+                            }
+
+                            const formData = new FormData();
+                            formData.append('document_type', documentType);
+                            formData.append('document', file);
+
+                            const btn = document.getElementById('upload-submit-btn');
+                            btn.disabled = true;
+                            btn.innerHTML = '<i class="fa-light fa-spinner fa-spin"></i> Uploading...';
+
+                            fetch('/api/kyc/documents', {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': 'Bearer ' + token
+                                },
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    alert('Document uploaded successfully!');
+                                    document.getElementById('kyc-upload-form').reset();
+                                    loadKYCStatus();
+                                } else {
+                                    alert('Error: ' + data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Error uploading document');
+                            })
+                            .finally(() => {
+                                btn.disabled = false;
+                                btn.innerHTML = '<i class="fa-light fa-upload"></i> Upload Document';
+                            });
+                        }
+
+                        function formatDocType(type) {
+                            const map = {
+                                'id_card': 'ID Card',
+                                'passport': 'Passport',
+                                'driver_license': 'Driver License',
+                                'proof_of_address': 'Proof of Address',
+                                'business_license': 'Business License'
+                            };
+                            return map[type] || type;
+                        }
+                        </script>
                         <div class="tab-pane fade" id="v-pills-settingsb" role="tabpanel" aria-labelledby="v-pills-settingsb-tab" tabindex="0">...</div>
                     </div>
                 </div>

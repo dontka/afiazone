@@ -181,9 +181,8 @@ L'application suit un pattern **MVC modulaire sans framework** avec couches mét
 /index.php             # Point d'entrée (router API REST)
 
 /html
-├── /back               # Templates HTML optionnels (admin panel future)
-├── /front              # Templates HTML optionnels (frontend future)
-└── /...                # Pages HTML statiques (non utilisées par l'API)
+├── /back               # Pages backend(admin, marchant et partenaire)
+├── /front              # Pages fontend(frontend et client)
 
 /public                # Fichiers statiques (CSS, JS, images)
 │

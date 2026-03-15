@@ -208,4 +208,22 @@ abstract class BaseController
             throw new HttpException('Unauthorized', 401);
         }
     }
+
+    /**
+     * Get current authenticated user ID
+     */
+    protected function getCurrentUserId(): int
+    {
+        $this->requireAuth();
+        return (int) $this->authUser->id;
+    }
+
+    /**
+     * Get current authenticated user
+     */
+    protected function getCurrentUser(): \App\Models\User
+    {
+        $this->requireAuth();
+        return $this->authUser;
+    }
 }
