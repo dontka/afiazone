@@ -1,0 +1,13 @@
+{
+  "name": "afyazone/marketplace",
+  "description": "Marketplace intelligente de produits de sante en PHP natif MVC.",
+  "type": "project",
+  "require": {
+    "php": ">=8.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  }
+}
