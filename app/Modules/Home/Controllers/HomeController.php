@@ -70,6 +70,6 @@ class HomeController extends Controller
                 ['value' => '24h', 'label' => 'Retrait ou livraison'],
                 ['value' => '4.9/5', 'label' => 'Satisfaction vendeurs'],
             ],
-            ], 'storefront');
+        ]);
     }
 }
