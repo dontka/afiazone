@@ -1,12 +1,5 @@
 <main class="account-page">
     <section class="account-card">
-        <div class="account-topline">
-            <a class="auth-brand" href="<?= e(url()) ?>"><span class="logo-box">A</span><strong>AfiaZone</strong></a>
-            <form action="<?= e(url('deconnexion')) ?>" method="post">
-                <?= csrf_field() ?>
-                <button class="account-logout" type="submit">Se deconnecter</button>
-            </form>
-        </div>
         <span class="account-kicker"><?= $merchant ? 'Espace marchand' : 'Espace client' ?></span>
         <h1>Bonjour <?= e($user['full_name'] ?? 'utilisateur') ?></h1>
         <p class="account-intro"><?= $merchant ? 'Votre espace professionnel est pret. La gestion du catalogue et du stock sera disponible dans les prochains modules.' : 'Retrouvez ici votre profil, vos commandes et vos pharmacies favorites.' ?></p>

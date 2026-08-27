@@ -7,7 +7,7 @@
             </div>
             <div class="toolbar-right">
                 <span>Support</span>
-                <span>Connexion</span>
+                <a href="<?= e(url($isAuthenticated ? 'compte' : 'connexion')) ?>"><?= $isAuthenticated ? 'Mon compte' : 'Connexion' ?></a>
             </div>
         </header>
 
@@ -25,23 +25,23 @@
                 <a href="<?= e(url('catalogue')) ?>">Catalogue</a>
                 <a href="<?= e(url('pharmacies')) ?>">Pharmacies</a>
                 <a href="<?= e(url('ordonnances')) ?>">Ordonnances</a>
-                <a href="<?= e(url('marchands')) ?>">Vendre</a>
+                <a href="<?= e(url('inscription/marchand')) ?>">Vendre</a>
             </nav>
 
             <div class="header-tools">
                 <button class="icon-button" type="button">♡</button>
                 <button class="icon-button" type="button">🛒</button>
-                <a class="account-button" href="<?= e(url('connexion')) ?>">Compte</a>
+                <a class="account-button" href="<?= e(url($isAuthenticated ? 'compte' : 'connexion')) ?>"><?= $isAuthenticated ? 'Mon compte' : 'Compte' ?></a>
             </div>
         </section>
 
         <section class="search-bar-wrap">
-            <form class="search-form" action="<?= e(url('recherche')) ?>" method="get">
+            <form class="search-form" action="<?= e(url('catalogue')) ?>" method="get">
                 <select name="category" aria-label="Catégorie">
                     <option value="">Catégorie</option>
-                    <option value="medicaments">Médicaments</option>
-                    <option value="diagnostic">Diagnostic</option>
-                    <option value="soins">Soins</option>
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?= e($category['slug']) ?>"><?= e($category['name']) ?></option>
+                    <?php endforeach; ?>
                 </select>
                 <input type="search" name="q" placeholder="Cherchez un produit, un service ou une pharmacie...">
                 <button type="submit">Rechercher</button>
@@ -76,7 +76,7 @@
 
             <div class="category-grid">
                 <?php foreach ($categories as $category): ?>
-                    <a class="category-item <?= e($category['tone']) ?>" href="<?= e(url('catalogue')) ?>">
+                    <a class="category-item <?= e($category['tone']) ?>" href="<?= e(url('categorie/' . $category['slug'])) ?>">
                         <span class="category-badge"><?= e($category['icon']) ?></span>
                         <strong><?= e($category['name']) ?></strong>
                         <small><?= e($category['count']) ?></small>
@@ -143,8 +143,8 @@
                         <h3><?= e($product['name']) ?></h3>
                         <p><?= e($product['meta']) ?></p>
                         <div class="card-footer">
-                            <strong><?= e($product['price']) ?> <small><?= e($product['unit']) ?></small></strong>
-                            <a href="<?= e(url('panier')) ?>">Ajouter</a>
+                            <strong><?= $product['price'] !== null ? e($product['price']) . ' <small>' . e($product['unit']) . '</small>' : 'Catalogue' ?></strong>
+                            <a href="<?= e(url('produit/' . $product['slug'])) ?>">Consulter</a>
                         </div>
                     </article>
                 <?php endforeach; ?>

@@ -26,6 +26,6 @@ class AccountController extends Controller
             'title' => $merchant ? 'Espace marchand | AfiaZone' : 'Mon compte | AfiaZone',
             'merchant' => $merchant,
             'user' => Auth::user(),
-        ]);
+        ], $merchant ? 'merchant' : 'client');
     }
 }

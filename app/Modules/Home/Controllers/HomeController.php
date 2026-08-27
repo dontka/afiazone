@@ -5,22 +5,54 @@ declare(strict_types=1);
 namespace App\Modules\Home\Controllers;
 
 use App\Core\Controller;
+use App\Core\Auth;
 use App\Core\Response;
+use App\Modules\Catalog\Services\CatalogService;
 
 class HomeController extends Controller
 {
     public function index(): Response
     {
+        $catalog = new CatalogService();
+        $catalogCategories = $catalog->categories();
+        $categoryStyles = [
+            'mint' => ['icon' => 'M', 'tone' => 'mint'],
+            'blue' => ['icon' => 'D', 'tone' => 'blue'],
+            'amber' => ['icon' => 'P', 'tone' => 'amber'],
+            'rose' => ['icon' => 'N', 'tone' => 'rose'],
+            'teal' => ['icon' => 'S', 'tone' => 'teal'],
+        ];
+        $categories = [];
+        foreach (array_slice($catalogCategories, 0, 5) as $index => $category) {
+            $style = $categoryStyles[array_keys($categoryStyles)[$index] ?? 'mint'];
+            $categories[] = [
+                'name' => $category['name'],
+                'slug' => $category['slug'],
+                'count' => (int) $category['product_count'] . ' produit(s)',
+                'icon' => $style['icon'],
+                'tone' => $style['tone'],
+            ];
+        }
+        $featuredProducts = [];
+        foreach (array_slice($catalog->products(), 0, 8) as $index => $product) {
+            $tones = ['green', 'blue', 'amber', 'rose', 'dark', 'mint', 'violet', 'orange'];
+            $featuredProducts[] = [
+                'name' => $product['name'],
+                'slug' => $product['slug'],
+                'price' => null,
+                'unit' => '',
+                'tag' => (int) $product['requires_prescription'] === 1 ? 'Ordonnance' : 'Catalogue',
+                'meta' => $product['short_description'] ?: $product['category_name'],
+                'tone' => $tones[$index] ?? 'green',
+                'requires_prescription' => (int) $product['requires_prescription'],
+            ];
+        }
+        $brands = $catalog->brands();
+
         return $this->view('Home::index', [
             'title' => 'AfiaZone | Marketplace santé & maison',
-            'categories' => [
-                ['name' => 'Medicaments', 'count' => '120 produits', 'icon' => '💊', 'tone' => 'mint'],
-                ['name' => 'Diagnostic', 'count' => 'Tests rapides', 'icon' => '🧪', 'tone' => 'blue'],
-                ['name' => 'Protection', 'count' => 'Masques & gants', 'icon' => '🧤', 'tone' => 'amber'],
-                ['name' => 'Nutrition', 'count' => 'Vitamines', 'icon' => '🥗', 'tone' => 'rose'],
-                ['name' => 'Soins', 'count' => 'Beauté & hygiene', 'icon' => '🧴', 'tone' => 'teal'],
-            ],
-            'brands' => ['Pharmacie', 'MediPlus', 'WellCare', 'HealthMart', 'LabOne', 'Carex'],
+            'categories' => $categories,
+            'brands' => $brands,
             'stores' => [
                 ['name' => 'Pharmacie centrale', 'location' => 'Centre-ville', 'distance' => '0,8 km', 'tone' => 'blue'],
                 ['name' => 'Afia Market', 'location' => 'Gombe', 'distance' => '1,2 km', 'tone' => 'green'],
@@ -28,16 +60,8 @@ class HomeController extends Controller
                 ['name' => 'MediPlus', 'location' => 'Limete', 'distance' => '3,1 km', 'tone' => 'rose'],
                 ['name' => 'Wellness Hub', 'location' => 'Ngaliema', 'distance' => '4,3 km', 'tone' => 'purple'],
             ],
-            'featuredProducts' => [
-                ['name' => 'Paracetamol 500mg', 'price' => '2 500', 'unit' => 'CDF', 'tag' => 'Promo', 'meta' => 'Pharmacie pilote', 'tone' => 'green'],
-                ['name' => 'Test rapide paludisme', 'price' => '6 800', 'unit' => 'CDF', 'tag' => 'En stock', 'meta' => 'Laboratoire', 'tone' => 'blue'],
-                ['name' => 'Gants nitrile', 'price' => '18 000', 'unit' => 'CDF', 'tag' => 'Top vente', 'meta' => 'Protection', 'tone' => 'amber'],
-                ['name' => 'Vitamine C 1000mg', 'price' => '4 900', 'unit' => 'CDF', 'tag' => 'Sante', 'meta' => 'Nutrition', 'tone' => 'rose'],
-                ['name' => 'Tensiomètre digital', 'price' => '29 000', 'unit' => 'CDF', 'tag' => 'Nouvel arrivage', 'meta' => 'Diagnostic', 'tone' => 'dark'],
-                ['name' => 'Gel hydroalcoolique', 'price' => '3 200', 'unit' => 'CDF', 'tag' => 'Confiance', 'meta' => 'Hygiène', 'tone' => 'mint'],
-                ['name' => 'Complément immunité', 'price' => '7 500', 'unit' => 'CDF', 'tag' => 'Recommandé', 'meta' => 'Nutrition', 'tone' => 'violet'],
-                ['name' => 'Masque N95', 'price' => '9 000', 'unit' => 'CDF', 'tag' => 'Stock sûr', 'meta' => 'Protection', 'tone' => 'orange'],
-            ],
+            'featuredProducts' => $featuredProducts,
+            'isAuthenticated' => Auth::check(),
             'collections' => [
                 [
                     'title' => 'Home Cleaning',
@@ -70,6 +94,7 @@ class HomeController extends Controller
                 ['value' => '24h', 'label' => 'Retrait ou livraison'],
                 ['value' => '4.9/5', 'label' => 'Satisfaction vendeurs'],
             ],
+            'layoutChrome' => false,
         ]);
     }
 }

@@ -8,7 +8,13 @@
 </head>
 <body>
     <div class="site-shell">
+        <?php if (($layoutChrome ?? true) === true): ?>
+            <?php require BASE_PATH . '/app/Modules/Shared/Views/partials/public-header.php'; ?>
+        <?php endif; ?>
         <?= $content ?>
+        <?php if (($layoutChrome ?? true) === true): ?>
+            <?php require BASE_PATH . '/app/Modules/Shared/Views/partials/public-footer.php'; ?>
+        <?php endif; ?>
     </div>
 </body>
 </html>

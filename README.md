@@ -60,6 +60,12 @@ GET  /compte
 GET  /marchand
 ```
 
+## Layouts et templates
+
+Les layouts partages sont dans `app/Modules/Shared/Views/layouts` : `public`, `client`, `merchant` et `admin`. Les elements reutilisables sont dans `app/Modules/Shared/Views/partials`.
+
+La page d'accueil conserve son storefront complet dans sa vue et desactive le chrome public du layout pour eviter un header duplique. Les espaces client et marchand utilisent leurs layouts dedies ; les formulaires Auth utilisent le layout public.
+
 ## Prochaine etape
 
 La verification email doit etre configuree avant de passer aux layouts complets et au module Catalogue.

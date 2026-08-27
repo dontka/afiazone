@@ -11,6 +11,7 @@ return [
     'modules' => [
         'Home',
         'Auth',
+        'Catalog',
         'Admin',
         'System',
     ],

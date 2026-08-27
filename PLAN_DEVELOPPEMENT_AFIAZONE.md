@@ -441,12 +441,12 @@ Etape 5 terminee.
 
 ### Objectif
 
-Créer les templates HTML en vues reutilisables MVC.
+Transformer les templates HTML existants en vues reutilisables MVC.
 
 ### A faire
 
-1. Identifier les assets CSS/JS/images utiles .
-2. Assets nécessaires depuis `public/assets`.
+1. Identifier les assets CSS/JS/images utiles.
+2. Copier ou servir les assets depuis `public/assets`.
 3. Creer un layout public : header, navigation, footer, zone contenu.
 4. Creer un layout client.
 5. Creer un layout marchand.
@@ -476,7 +476,7 @@ Etapes 3, 5 et 6 terminees.
 
 ### Objectif
 
-Creer le catalogue medical central. A ce stade, un produit existe dans AfiaZone, mais il n'est pas encore vendu par un marchand.
+Creer le catalogue medical central. A ce stade, un produit existe dans AfiaZone, mais il n'est pas encore vendu par un marchand, bref tout le flux produit coté front et back.
 
 ### A faire
 
