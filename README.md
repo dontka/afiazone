@@ -9,6 +9,16 @@ AfiaZone est une marketplace intelligente de produits de sante construite en PHP
 3. Faire pointer le virtual host Laragon vers `public/`.
 4. Ouvrir `http://afyazone.test`.
 
+## Base de donnees
+
+Apres avoir configure `.env` et demarre MySQL, executer les migrations :
+
+```text
+php database/migrate.php
+```
+
+La commande cree la base locale configuree si elle n'existe pas, puis installe les tables de fondation et enregistre les migrations executees.
+
 ## Routes du Sprint 1
 
 ```text
@@ -19,4 +29,4 @@ GET /health-check  Verification PHP/MySQL
 
 ## Prochaine etape
 
-Apres validation du socle MVC, commencer le module Auth et RBAC.
+Apres validation de la base de donnees, commencer la securite transversale puis le module Auth et RBAC.
