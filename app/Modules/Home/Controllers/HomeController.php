@@ -48,51 +48,43 @@ class HomeController extends Controller
             ];
         }
         $brands = $catalog->brands();
+        $allProducts = $catalog->products();
+        $tones = ['mint', 'blue', 'amber', 'rose', 'teal'];
+        $collections = [];
+        foreach (array_slice($catalogCategories, 0, 2) as $categoryIndex => $category) {
+            $categoryProducts = array_values(array_filter(
+                $allProducts,
+                static fn (array $product): bool => $product['category_slug'] === $category['slug']
+            ));
+            $items = [];
+            foreach (array_slice($categoryProducts, 0, 4) as $itemIndex => $product) {
+                $items[] = [
+                    'name' => $product['name'],
+                    'slug' => $product['slug'],
+                    'tag' => (int) $product['requires_prescription'] === 1 ? 'Ordonnance' : 'Catalogue',
+                    'tone' => $tones[($categoryIndex + $itemIndex) % count($tones)],
+                ];
+            }
+            if ($items !== []) {
+                $collections[] = [
+                    'title' => $category['name'],
+                    'subtitle' => $category['description'] ?: 'Produits disponibles',
+                    'items' => $items,
+                ];
+            }
+        }
 
         return $this->view('Home::index', [
             'title' => 'AfiaZone | Marketplace santé & maison',
             'categories' => $categories,
             'brands' => $brands,
-            'stores' => [
-                ['name' => 'Pharmacie centrale', 'location' => 'Centre-ville', 'distance' => '0,8 km', 'tone' => 'blue'],
-                ['name' => 'Afia Market', 'location' => 'Gombe', 'distance' => '1,2 km', 'tone' => 'green'],
-                ['name' => 'City Care Store', 'location' => 'Kintambo', 'distance' => '2,4 km', 'tone' => 'orange'],
-                ['name' => 'MediPlus', 'location' => 'Limete', 'distance' => '3,1 km', 'tone' => 'rose'],
-                ['name' => 'Wellness Hub', 'location' => 'Ngaliema', 'distance' => '4,3 km', 'tone' => 'purple'],
-            ],
             'featuredProducts' => $featuredProducts,
             'isAuthenticated' => Auth::check(),
-            'collections' => [
-                [
-                    'title' => 'Home Cleaning',
-                    'subtitle' => 'Hygiène douce',
-                    'items' => [
-                        ['name' => 'Nettoyant multi-usage', 'price' => '4 200', 'tag' => 'Top', 'tone' => 'mint'],
-                        ['name' => 'Lessive concentrée', 'price' => '5 650', 'tag' => 'Promo', 'tone' => 'blue'],
-                        ['name' => 'Mop & serpillière', 'price' => '12 900', 'tag' => 'New', 'tone' => 'amber'],
-                        ['name' => 'Désinfectant maison', 'price' => '6 800', 'tag' => 'Populaire', 'tone' => 'rose'],
-                    ],
-                ],
-                [
-                    'title' => 'Wellness & nutrition',
-                    'subtitle' => 'Pour une vie plus saine',
-                    'items' => [
-                        ['name' => 'Boisson énergisante', 'price' => '3 950', 'tag' => 'Boost', 'tone' => 'violet'],
-                        ['name' => 'Mélange superfoods', 'price' => '8 700', 'tag' => 'Best', 'tone' => 'green'],
-                        ['name' => 'Énergie naturelle', 'price' => '6 100', 'tag' => 'Nouveau', 'tone' => 'teal'],
-                        ['name' => 'Supplément anti-stress', 'price' => '9 300', 'tag' => 'Top', 'tone' => 'orange'],
-                    ],
-                ],
-            ],
-            'benefits' => [
-                ['title' => 'Livraison rapide', 'text' => 'Sous 24h dans les zones couvertes'],
-                ['title' => 'Paiement sécurisé', 'text' => 'Mobile money & paiement à la livraison'],
-                ['title' => 'Conseils fiables', 'text' => 'Validation humaine pour les produits sensibles'],
-            ],
+            'collections' => $collections,
             'stats' => [
-                ['value' => '8k+', 'label' => 'Produits recherchés'],
-                ['value' => '24h', 'label' => 'Retrait ou livraison'],
-                ['value' => '4.9/5', 'label' => 'Satisfaction vendeurs'],
+                ['value' => (string) $catalog->publishedProductCount(), 'label' => 'Produits publiés'],
+                ['value' => (string) count($catalogCategories), 'label' => 'Catégories actives'],
+                ['value' => (string) $catalog->brandCount(), 'label' => 'Marques référencées'],
             ],
             'layoutChrome' => false,
         ]);

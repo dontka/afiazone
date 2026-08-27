@@ -85,30 +85,6 @@
             </div>
         </section>
 
-        <section class="stores-section">
-            <div class="section-title-row">
-                <div>
-                    <span>Près de vous</span>
-                    <h2>Parcourir les magasins</h2>
-                </div>
-                <a href="<?= e(url('pharmacies')) ?>">Voir tout</a>
-            </div>
-
-            <div class="store-grid">
-                <?php foreach ($stores as $store): ?>
-                    <article class="store-card">
-                        <div class="store-image <?= e($store['tone']) ?>"><span>▦</span></div>
-                        <div class="store-card-body">
-                            <div class="store-rating">★ 4.9 <small>Ouvert</small></div>
-                            <h3><?= e($store['name']) ?></h3>
-                            <p>⌖ <?= e($store['location']) ?></p>
-                            <span class="store-distance"><?= e($store['distance']) ?></span>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
-            </div>
-        </section>
-
         <section class="brands-section">
             <div class="section-title-row narrow">
                 <div>
@@ -170,26 +146,14 @@
                             <span class="mini-tag"><?= e($item['tag']) ?></span>
                             <h3><?= e($item['name']) ?></h3>
                             <div class="mini-footer">
-                                <strong><?= e($item['price']) ?> <small>CDF</small></strong>
-                                <a href="<?= e(url('panier')) ?>">+</a>
+                                <strong><?= e($item['tag']) ?></strong>
+                                <a href="<?= e(url('produit/' . $item['slug'])) ?>">Consulter</a>
                             </div>
                         </article>
                     <?php endforeach; ?>
                 </div>
             </section>
         <?php endforeach; ?>
-
-        <section class="benefits-grid">
-            <?php foreach ($benefits as $benefit): ?>
-                <div class="benefit-item">
-                    <span class="check">✓</span>
-                    <div>
-                        <h3><?= e($benefit['title']) ?></h3>
-                        <p><?= e($benefit['text']) ?></p>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </section>
 
         <section class="metrics-strip">
             <?php foreach ($stats as $stat): ?>
