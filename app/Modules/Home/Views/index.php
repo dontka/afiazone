@@ -1,84 +1,203 @@
-<section class="hero marketplace-hero">
-    <div class="hero-copy">
-        <span class="eyebrow">Marketplace intelligente de produits de sante</span>
-        <h1>Localiser, commander et recevoir les produits de sante essentiels.</h1>
-        <p>
-            AfiaZone connecte patients, pharmacies et structures de soins pour rendre les medicaments,
-            dispositifs medicaux et equipements disponibles plus faciles a trouver et plus surs a acheter.
-        </p>
+<div class="marketplace-page">
+    <div class="marketplace-container">
+        <header class="top-toolbar">
+            <div class="toolbar-left">
+                <span>📍 Livraison locale</span>
+                <span>🚚 Retrait en 24h</span>
+            </div>
+            <div class="toolbar-right">
+                <span>Support</span>
+                <span>Connexion</span>
+            </div>
+        </header>
 
-        <form class="hero-search" action="<?= e(url('recherche')) ?>" method="get">
-            <input name="q" type="search" placeholder="Ex: paracetamol, test paludisme, tensiometre">
-            <button type="submit">Trouver</button>
-        </form>
-
-        <div class="hero-tags" aria-label="Avantages AfiaZone">
-            <?php foreach ($benefits as $benefit): ?>
-                <span><?= e($benefit) ?></span>
-            <?php endforeach; ?>
-        </div>
-    </div>
-
-    <div class="hero-card" aria-label="Commande pilote">
-        <span class="deal-label">Commande pilote</span>
-        <h2>Produit sous ordonnance</h2>
-        <p>Le checkout bloque la vente jusqu'a validation humaine de l'ordonnance.</p>
-        <div class="hero-progress">
-            <span>Panier</span>
-            <span>Ordonnance</span>
-            <span>Retrait</span>
-        </div>
-    </div>
-</section>
-
-<section class="section-block">
-    <div class="section-heading">
-        <span>Categories populaires</span>
-        <h2>Demarrer par le besoin du patient</h2>
-        <a href="<?= e(url('catalogue')) ?>">Voir tout</a>
-    </div>
-
-    <div class="category-grid">
-        <?php foreach ($categories as $category): ?>
-            <a class="category-card <?= e($category['tone']) ?>" href="<?= e(url('catalogue')) ?>">
-                <span class="category-icon"><?= e(substr($category['name'], 0, 1)) ?></span>
-                <strong><?= e($category['name']) ?></strong>
-                <small><?= e($category['count']) ?></small>
-            </a>
-        <?php endforeach; ?>
-    </div>
-</section>
-
-<section class="section-block product-section">
-    <div class="section-heading">
-        <span>Disponibilite locale</span>
-        <h2>Offres de demonstration</h2>
-        <a href="<?= e(url('health-check')) ?>">Etat du systeme</a>
-    </div>
-
-    <div class="product-grid">
-        <?php foreach ($deals as $deal): ?>
-            <article class="product-card">
-                <div class="product-image" aria-hidden="true">
-                    <span><?= e(substr($deal['name'], 0, 1)) ?></span>
+        <section class="main-header">
+            <div class="brand-lockup">
+                <div class="logo-box">A</div>
+                <div>
+                    <strong>AfiaZone</strong>
+                    <small>Hyperlocal & santé</small>
                 </div>
-                <span class="product-badge"><?= e($deal['badge']) ?></span>
-                <h3><?= e($deal['name']) ?></h3>
-                <p><?= e($deal['seller']) ?></p>
-                <div class="product-footer">
-                    <strong><?= e($deal['price']) ?></strong>
-                    <a class="button compact" href="<?= e(url('panier')) ?>">Ajouter</a>
-                </div>
+            </div>
+
+            <nav class="main-nav" aria-label="Navigation principale">
+                <a href="<?= e(url()) ?>">Accueil</a>
+                <a href="<?= e(url('catalogue')) ?>">Catalogue</a>
+                <a href="<?= e(url('pharmacies')) ?>">Pharmacies</a>
+                <a href="<?= e(url('ordonnances')) ?>">Ordonnances</a>
+                <a href="<?= e(url('marchands')) ?>">Vendre</a>
+            </nav>
+
+            <div class="header-tools">
+                <button class="icon-button" type="button">♡</button>
+                <button class="icon-button" type="button">🛒</button>
+                <a class="account-button" href="<?= e(url('connexion')) ?>">Compte</a>
+            </div>
+        </section>
+
+        <section class="search-bar-wrap">
+            <form class="search-form" action="<?= e(url('recherche')) ?>" method="get">
+                <select name="category" aria-label="Catégorie">
+                    <option value="">Catégorie</option>
+                    <option value="medicaments">Médicaments</option>
+                    <option value="diagnostic">Diagnostic</option>
+                    <option value="soins">Soins</option>
+                </select>
+                <input type="search" name="q" placeholder="Cherchez un produit, un service ou une pharmacie...">
+                <button type="submit">Rechercher</button>
+            </form>
+        </section>
+
+        <section class="promo-grid">
+            <article class="promo-card promo-card-green">
+                <span class="promo-tag">AfiaZone deals</span>
+                <h1>Vos essentiels santé, au meilleur prix.</h1>
+                <p>Des produits fiables livrés rapidement près de chez vous.</p>
+                <a href="<?= e(url('catalogue')) ?>" class="cta-primary">Acheter maintenant</a>
+                <span class="promo-art">+</span>
             </article>
-        <?php endforeach; ?>
-    </div>
-</section>
+            <article class="promo-card promo-card-blue">
+                <span class="promo-tag">Service local</span>
+                <h2>Livraison rapide et sécurisée</h2>
+                <p>Commandez auprès de vendeurs vérifiés dans votre quartier.</p>
+                <a href="<?= e(url('pharmacies')) ?>" class="cta-secondary">Voir les magasins</a>
+                <span class="delivery-art">24<span>h</span></span>
+            </article>
+        </section>
 
-<section class="service-strip" aria-label="Indicateurs MVP">
-    <?php foreach ($metrics as $value => $label): ?>
-        <div class="service-item">
-            <strong><?= e($value) ?></strong>
-            <span><?= e($label) ?></span>
-        </div>
-    <?php endforeach; ?>
-</section>
+        <section class="category-section">
+            <div class="section-title-row">
+                <div>
+                    <span>Nos catégories</span>
+                    <h2>Parcourir par besoin</h2>
+                </div>
+                <a href="<?= e(url('catalogue')) ?>">Voir tout</a>
+            </div>
+
+            <div class="category-grid">
+                <?php foreach ($categories as $category): ?>
+                    <a class="category-item <?= e($category['tone']) ?>" href="<?= e(url('catalogue')) ?>">
+                        <span class="category-badge"><?= e($category['icon']) ?></span>
+                        <strong><?= e($category['name']) ?></strong>
+                        <small><?= e($category['count']) ?></small>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <section class="stores-section">
+            <div class="section-title-row">
+                <div>
+                    <span>Près de vous</span>
+                    <h2>Parcourir les magasins</h2>
+                </div>
+                <a href="<?= e(url('pharmacies')) ?>">Voir tout</a>
+            </div>
+
+            <div class="store-grid">
+                <?php foreach ($stores as $store): ?>
+                    <article class="store-card">
+                        <div class="store-image <?= e($store['tone']) ?>"><span>▦</span></div>
+                        <div class="store-card-body">
+                            <div class="store-rating">★ 4.9 <small>Ouvert</small></div>
+                            <h3><?= e($store['name']) ?></h3>
+                            <p>⌖ <?= e($store['location']) ?></p>
+                            <span class="store-distance"><?= e($store['distance']) ?></span>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <section class="brands-section">
+            <div class="section-title-row narrow">
+                <div>
+                    <span>Nos partenaires</span>
+                    <h2>Marques de confiance</h2>
+                </div>
+            </div>
+
+            <div class="brands-row">
+                <?php foreach ($brands as $brand): ?>
+                    <div class="brand-pill"><?= e($brand) ?></div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <section class="products-section">
+            <div class="section-title-row">
+                <div>
+                    <span>Produits populaires</span>
+                    <h2>Les plus recherchés</h2>
+                </div>
+                <a href="<?= e(url('catalogue')) ?>">Tout afficher</a>
+            </div>
+
+            <div class="product-grid">
+                <?php foreach ($featuredProducts as $product): ?>
+                    <article class="product-card">
+                        <div class="product-thumb <?= e($product['tone']) ?>">
+                            <span><?= e(substr($product['name'], 0, 1)) ?></span>
+                        </div>
+                        <span class="buyer-tag"><?= e($product['tag']) ?></span>
+                        <h3><?= e($product['name']) ?></h3>
+                        <p><?= e($product['meta']) ?></p>
+                        <div class="card-footer">
+                            <strong><?= e($product['price']) ?> <small><?= e($product['unit']) ?></small></strong>
+                            <a href="<?= e(url('panier')) ?>">Ajouter</a>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <?php foreach ($collections as $collection): ?>
+            <section class="collection-section">
+                <div class="section-title-row">
+                    <div>
+                        <span><?= e($collection['subtitle']) ?></span>
+                        <h2><?= e($collection['title']) ?></h2>
+                    </div>
+                    <a href="<?= e(url('catalogue')) ?>">Explorer</a>
+                </div>
+
+                <div class="mini-grid">
+                    <?php foreach ($collection['items'] as $item): ?>
+                        <article class="mini-card-item">
+                            <div class="mini-thumb <?= e($item['tone']) ?>">
+                                <span><?= e(substr($item['name'], 0, 1)) ?></span>
+                            </div>
+                            <span class="mini-tag"><?= e($item['tag']) ?></span>
+                            <h3><?= e($item['name']) ?></h3>
+                            <div class="mini-footer">
+                                <strong><?= e($item['price']) ?> <small>CDF</small></strong>
+                                <a href="<?= e(url('panier')) ?>">+</a>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endforeach; ?>
+
+        <section class="benefits-grid">
+            <?php foreach ($benefits as $benefit): ?>
+                <div class="benefit-item">
+                    <span class="check">✓</span>
+                    <div>
+                        <h3><?= e($benefit['title']) ?></h3>
+                        <p><?= e($benefit['text']) ?></p>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </section>
+
+        <section class="metrics-strip">
+            <?php foreach ($stats as $stat): ?>
+                <div class="metric-box">
+                    <strong><?= e($stat['value']) ?></strong>
+                    <span><?= e($stat['label']) ?></span>
+                </div>
+            <?php endforeach; ?>
+        </section>
+    </div>
+</div>
