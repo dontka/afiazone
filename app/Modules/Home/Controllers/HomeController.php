@@ -15,6 +15,10 @@ class HomeController extends Controller
     {
         $catalog = new CatalogService();
         $catalogCategories = $catalog->categories();
+        $availableCategories = array_values(array_filter(
+            $catalogCategories,
+            static fn (array $category): bool => (int) $category['product_count'] > 0
+        ));
         $categoryStyles = [
             'mint' => ['icon' => 'M', 'tone' => 'mint'],
             'blue' => ['icon' => 'D', 'tone' => 'blue'],
@@ -23,8 +27,8 @@ class HomeController extends Controller
             'teal' => ['icon' => 'S', 'tone' => 'teal'],
         ];
         $categories = [];
-        foreach (array_slice($catalogCategories, 0, 5) as $index => $category) {
-            $style = $categoryStyles[array_keys($categoryStyles)[$index] ?? 'mint'];
+        foreach ($availableCategories as $index => $category) {
+            $style = $categoryStyles[array_keys($categoryStyles)[$index % count($categoryStyles)] ?? 'mint'];
             $categories[] = [
                 'name' => $category['name'],
                 'slug' => $category['slug'],
@@ -51,7 +55,7 @@ class HomeController extends Controller
         $allProducts = $catalog->products();
         $tones = ['mint', 'blue', 'amber', 'rose', 'teal'];
         $collections = [];
-        foreach (array_slice($catalogCategories, 0, 2) as $categoryIndex => $category) {
+        foreach (array_slice($availableCategories, 0, 2) as $categoryIndex => $category) {
             $categoryProducts = array_values(array_filter(
                 $allProducts,
                 static fn (array $product): bool => $product['category_slug'] === $category['slug']

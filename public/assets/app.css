@@ -784,6 +784,14 @@ select {
   }
 }
 
+.mini-footer a {
+  width: auto;
+  min-height: 32px;
+  padding: 0 9px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 /* Catalog */
 .main-content {
   width: min(1220px, calc(100% - 32px));

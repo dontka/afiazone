@@ -23,14 +23,13 @@
             <nav class="main-nav" aria-label="Navigation principale">
                 <a href="<?= e(url()) ?>">Accueil</a>
                 <a href="<?= e(url('catalogue')) ?>">Catalogue</a>
-                <a href="<?= e(url('pharmacies')) ?>">Pharmacies</a>
-                <a href="<?= e(url('ordonnances')) ?>">Ordonnances</a>
+                <a href="<?= e(url('catalogue')) ?>">Explorer</a>
                 <a href="<?= e(url('inscription/marchand')) ?>">Vendre</a>
             </nav>
 
             <div class="header-tools">
-                <button class="icon-button" type="button">♡</button>
-                <button class="icon-button" type="button">🛒</button>
+                <a class="icon-button" href="<?= e(url('catalogue')) ?>" aria-label="Explorer le catalogue">⌕</a>
+                <a class="icon-button" href="<?= e(url('catalogue')) ?>" aria-label="Voir le catalogue">🛒</a>
                 <a class="account-button" href="<?= e(url($isAuthenticated ? 'compte' : 'connexion')) ?>"><?= $isAuthenticated ? 'Mon compte' : 'Compte' ?></a>
             </div>
         </section>
@@ -60,7 +59,7 @@
                 <span class="promo-tag">Service local</span>
                 <h2>Livraison rapide et sécurisée</h2>
                 <p>Commandez auprès de vendeurs vérifiés dans votre quartier.</p>
-                <a href="<?= e(url('pharmacies')) ?>" class="cta-secondary">Voir les magasins</a>
+                <a href="<?= e(url('catalogue')) ?>" class="cta-secondary">Explorer le catalogue</a>
                 <span class="delivery-art">24<span>h</span></span>
             </article>
         </section>
