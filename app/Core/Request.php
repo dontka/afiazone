@@ -57,4 +57,9 @@ class Request
     {
         return $this->files[$key] ?? null;
     }
+
+    public function ip(): string
+    {
+        return (string) ($this->server['REMOTE_ADDR'] ?? '0.0.0.0');
+    }
 }

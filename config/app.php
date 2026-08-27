@@ -10,8 +10,10 @@ return [
     'timezone' => env('APP_TIMEZONE', 'Africa/Kinshasa'),
     'modules' => [
         'Home',
+        'Auth',
         'Admin',
         'System',
     ],
     'database' => require __DIR__ . '/database.php',
+    'mail' => require __DIR__ . '/mail.php',
 ];

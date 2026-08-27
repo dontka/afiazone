@@ -34,6 +34,33 @@ class Auth
         return self::id() !== null;
     }
 
+    public static function user(): ?array
+    {
+        $userId = self::id();
+        if ($userId === null) {
+            return null;
+        }
+
+        $statement = Database::connection()->prepare(
+            'SELECT u.id, u.uuid, u.email, u.phone, u.status, p.full_name, p.business_name FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = :id AND u.status = :status LIMIT 1'
+        );
+        $statement->execute(['id' => $userId, 'status' => 'active']);
+        $user = $statement->fetch();
+
+        return is_array($user) ? $user : null;
+    }
+
+    public static function hasAnyRole(array $roles): bool
+    {
+        foreach ($roles as $role) {
+            if (self::hasRole($role)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static function hasRole(string $role): bool
     {
         return self::hasRelation(

@@ -10,13 +10,14 @@ use App\Core\Response;
 
 class Role
 {
-    public function __construct(private readonly string $role)
+    public function __construct(private readonly string|array $role)
     {
     }
 
     public function __invoke(Request $request, callable $next): Response
     {
-        if (! Auth::hasRole($this->role)) {
+        $allowed = is_array($this->role) ? Auth::hasAnyRole($this->role) : Auth::hasRole($this->role);
+        if (! $allowed) {
             return new Response('Acces interdit.', 403);
         }
 
