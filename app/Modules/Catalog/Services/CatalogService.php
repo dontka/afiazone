@@ -224,6 +224,16 @@ class CatalogService
         return $this->deleteMedia('product_documents', $id);
     }
 
+    public function publicImage(int $id): ?array
+    {
+        $statement = Database::connection()->prepare(
+            "SELECT pi.path FROM product_images pi INNER JOIN products p ON p.id = pi.product_id INNER JOIN categories c ON c.id = p.category_id WHERE pi.id = :id AND p.status = 'published' AND c.status = 'published' LIMIT 1"
+        );
+        $statement->execute(['id' => $id]);
+        $image = $statement->fetch();
+        return is_array($image) ? $image : null;
+    }
+
     private function deleteMedia(string $table, int $id): ?string
     {
         $statement = Database::connection()->prepare("SELECT path FROM {$table} WHERE id = :id");

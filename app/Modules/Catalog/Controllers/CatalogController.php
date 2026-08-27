@@ -123,7 +123,7 @@ class CatalogController extends Controller
             Session::flash('catalog.errors', ['name' => ['Le produit ou sa categorie est invalide.']]);
             return $this->redirect('/admin/catalogue');
         }
-        Session::flash('catalog.message', 'Produit publie.');
+        Session::flash('catalog.message', 'Produit enregistre.');
         return $this->redirect('/admin/catalogue');
     }
 
@@ -185,6 +185,7 @@ class CatalogController extends Controller
             'brands' => $service->brandOptions(),
             'ingredients' => $service->ingredients(),
             'errors' => Session::consumeFlash('catalog.errors', []),
+            'message' => Session::consumeFlash('catalog.message'),
         ], 'admin');
     }
 
@@ -258,6 +259,37 @@ class CatalogController extends Controller
             Session::flash('catalog.errors', ['document' => [$exception->getMessage()]]);
         }
         return $this->redirect('/admin/produits/' . (int) $id . '/modifier');
+    }
+
+    public function deleteImage(string $id): Response
+    {
+        $path = (new CatalogService())->deleteImage((int) $id);
+        if ($path !== null) {
+            $this->deleteStoredFiles([$path]);
+        }
+        Session::flash('catalog.message', 'Image supprimee.');
+        return $this->redirect('/admin/produits');
+    }
+
+    public function deleteDocument(string $id): Response
+    {
+        $path = (new CatalogService())->deleteDocument((int) $id);
+        if ($path !== null) {
+            $this->deleteStoredFiles([$path]);
+        }
+        Session::flash('catalog.message', 'Document supprime.');
+        return $this->redirect('/admin/produits');
+    }
+
+    public function image(string $id): Response
+    {
+        $image = (new CatalogService())->publicImage((int) $id);
+        $path = $image === null ? null : dirname(__DIR__, 4) . '/storage/uploads/' . ltrim($image['path'], '/\\');
+        if ($path === null || ! is_file($path)) {
+            return new Response('Image introuvable.', 404);
+        }
+        $mimeType = mime_content_type($path) ?: 'application/octet-stream';
+        return new Response((string) file_get_contents($path), 200, ['Content-Type' => $mimeType, 'Cache-Control' => 'public, max-age=86400']);
     }
 
     private function productData(Request $request): array

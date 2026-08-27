@@ -10,6 +10,7 @@ use App\Modules\Catalog\Controllers\CatalogController;
 $router->get('/catalogue', [CatalogController::class, 'index']);
 $router->get('/categorie/{slug}', [CatalogController::class, 'category']);
 $router->get('/produit/{slug}', [CatalogController::class, 'show']);
+$router->get('/produit-image/{id}', [CatalogController::class, 'image']);
 $router->get('/admin/catalogue', [CatalogController::class, 'adminIndex'], [Authenticate::class, new Role(['admin', 'super_admin'])]);
 $router->post('/admin/catalogue/categories', [CatalogController::class, 'storeCategory'], [CsrfMiddleware::class, Authenticate::class, new Role(['admin', 'super_admin'])]);
 $router->post('/admin/catalogue/produits', [CatalogController::class, 'storeProduct'], [CsrfMiddleware::class, Authenticate::class, new Role(['admin', 'super_admin'])]);
@@ -25,3 +26,5 @@ $router->delete('/admin/produits/{id}', [CatalogController::class, 'deleteProduc
 $router->patch('/admin/produits/{id}/statut', [CatalogController::class, 'changeProductStatus'], [CsrfMiddleware::class, Authenticate::class, new Role(['admin', 'super_admin'])]);
 $router->post('/admin/produits/{id}/images', [CatalogController::class, 'storeImage'], [CsrfMiddleware::class, Authenticate::class, new Role(['admin', 'super_admin'])]);
 $router->post('/admin/produits/{id}/documents', [CatalogController::class, 'storeDocument'], [CsrfMiddleware::class, Authenticate::class, new Role(['admin', 'super_admin'])]);
+$router->delete('/admin/images/{id}', [CatalogController::class, 'deleteImage'], [CsrfMiddleware::class, Authenticate::class, new Role(['admin', 'super_admin'])]);
+$router->delete('/admin/documents/{id}', [CatalogController::class, 'deleteDocument'], [CsrfMiddleware::class, Authenticate::class, new Role(['admin', 'super_admin'])]);
