@@ -8,30 +8,30 @@ class Router
 {
     private array $routes = [];
 
-    public function get(string $path, callable|array $handler): void
+    public function get(string $path, callable|array $handler, array $middleware = []): void
     {
-        $this->add('GET', $path, $handler);
+        $this->add('GET', $path, $handler, $middleware);
     }
 
-    public function post(string $path, callable|array $handler): void
+    public function post(string $path, callable|array $handler, array $middleware = []): void
     {
-        $this->add('POST', $path, $handler);
+        $this->add('POST', $path, $handler, $middleware);
     }
 
-    public function patch(string $path, callable|array $handler): void
+    public function patch(string $path, callable|array $handler, array $middleware = []): void
     {
-        $this->add('PATCH', $path, $handler);
+        $this->add('PATCH', $path, $handler, $middleware);
     }
 
-    public function delete(string $path, callable|array $handler): void
+    public function delete(string $path, callable|array $handler, array $middleware = []): void
     {
-        $this->add('DELETE', $path, $handler);
+        $this->add('DELETE', $path, $handler, $middleware);
     }
 
-    public function add(string $method, string $path, callable|array $handler): void
+    public function add(string $method, string $path, callable|array $handler, array $middleware = []): void
     {
         $path = $this->normalizePath($path);
-        $this->routes[strtoupper($method)][] = compact('path', 'handler');
+        $this->routes[strtoupper($method)][] = compact('path', 'handler', 'middleware');
     }
 
     public function dispatch(Request $request): Response
@@ -46,7 +46,7 @@ class Router
                 continue;
             }
 
-            return $this->execute($route['handler'], $params);
+            return $this->execute($route['handler'], $route['middleware'], $params, $request);
         }
 
         return new Response(
@@ -58,19 +58,25 @@ class Router
         );
     }
 
-    private function execute(callable|array $handler, array $params): Response
+    private function execute(callable|array $handler, array $middleware, array $params, Request $request): Response
     {
-        if (is_array($handler) && is_string($handler[0])) {
-            $handler[0] = new $handler[0]();
+        $next = function (Request $request) use ($handler, $params): Response {
+            $resolvedHandler = $handler;
+            if (is_array($resolvedHandler) && is_string($resolvedHandler[0])) {
+                $resolvedHandler[0] = new $resolvedHandler[0]();
+            }
+
+            $result = $resolvedHandler(...array_values($params));
+
+            return $result instanceof Response ? $result : new Response((string) $result);
+        };
+
+        foreach (array_reverse($middleware) as $item) {
+            $middlewareHandler = is_string($item) ? new $item() : $item;
+            $next = fn (Request $request): Response => $middlewareHandler($request, $next);
         }
 
-        $result = $handler(...array_values($params));
-
-        if ($result instanceof Response) {
-            return $result;
-        }
-
-        return new Response((string) $result);
+        return $next($request);
     }
 
     private function match(string $routePath, string $requestPath): ?array

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\App;
 use App\Core\Request;
+use App\Core\Session;
 
 define('BASE_PATH', dirname(__DIR__));
 
@@ -38,14 +39,14 @@ if ((bool) ($config['debug'] ?? false)) {
     ini_set('display_errors', '0');
 }
 
-$sessionPath = BASE_PATH . '/storage/sessions';
-if (is_dir($sessionPath)) {
-    session_save_path($sessionPath);
-}
+Session::start(
+    BASE_PATH . '/storage/sessions',
+    ($config['env'] ?? 'local') === 'production'
+);
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: strict-origin-when-cross-origin');
 
 $app = new App($config);
 $app->loadRoutes($config['modules'] ?? []);

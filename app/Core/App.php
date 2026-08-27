@@ -10,9 +10,12 @@ class App
 {
     private Router $router;
 
+    private Logger $logger;
+
     public function __construct(private array $config)
     {
         $this->router = new Router();
+        $this->logger = new Logger(BASE_PATH . '/storage/logs/app.log');
         Database::configure($this->config['database'] ?? []);
     }
 
@@ -49,10 +52,7 @@ class App
     {
         $this->logException($exception);
 
-        $debug = (bool) ($this->config['debug'] ?? false);
-        $message = $debug
-            ? '<pre>' . htmlspecialchars((string) $exception, ENT_QUOTES, 'UTF-8') . '</pre>'
-            : 'Une erreur est survenue. Veuillez reessayer plus tard.';
+        $message = 'Une erreur est survenue. Veuillez reessayer plus tard.';
 
         return new Response(
             View::render('Shared::errors/500', [
@@ -65,13 +65,6 @@ class App
 
     private function logException(Throwable $exception): void
     {
-        $logFile = BASE_PATH . '/storage/logs/app.log';
-
-        if (! is_dir(dirname($logFile))) {
-            return;
-        }
-
-        $message = '[' . date('Y-m-d H:i:s') . '] ' . (string) $exception . PHP_EOL;
-        error_log($message, 3, $logFile);
+        $this->logger->exception($exception);
     }
 }

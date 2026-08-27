@@ -67,3 +67,17 @@ if (! function_exists('asset')) {
         return url('assets/' . ltrim($path, '/'));
     }
 }
+
+if (! function_exists('csrf_token')) {
+    function csrf_token(): string
+    {
+        return \App\Core\Csrf::token();
+    }
+}
+
+if (! function_exists('csrf_field')) {
+    function csrf_field(): string
+    {
+        return \App\Core\Csrf::field();
+    }
+}

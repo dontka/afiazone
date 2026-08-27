@@ -19,6 +19,16 @@ php database/migrate.php
 
 La commande cree la base locale configuree si elle n'existe pas, puis installe les tables de fondation et enregistre les migrations executees.
 
+## Securite transversale
+
+Les composants de securite sont disponibles dans `app/Core` : session securisee, CSRF, validation, authentification, stockage prive des fichiers, journalisation et middlewares `Guest`, `Authenticate`, `Role`, `Permission` et `CsrfMiddleware`.
+
+Les routes peuvent declarer leurs middlewares en troisieme argument :
+
+```php
+$router->post('/exemple', [ExampleController::class, 'store'], [CsrfMiddleware::class]);
+```
+
 ## Routes du Sprint 1
 
 ```text

@@ -373,7 +373,7 @@ Etapes 3 et 4 terminees.
 
 ### Objectif
 
-Permettre aux utilisateurs de creer un compte, se connecter et obtenir un role.
+Permettre aux utilisateurs de creer un compte, se connecter et obtenir un role avec un design UI et UX impécable.
 
 ### A faire
 
